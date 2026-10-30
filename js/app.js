@@ -51,7 +51,9 @@
       name: typeof me.name === 'string' && me.name.trim() ? me.name : '我',
       avatar: typeof me.avatar === 'string' ? me.avatar : '',
       color: me.color || '#07C160',
-      region: typeof me.region === 'string' ? me.region : ''
+      region: typeof me.region === 'string' ? me.region : '',
+      wxid: typeof me.wxid === 'string' ? me.wxid : '',
+      status: typeof me.status === 'string' ? me.status : ''
     };
   }
 
@@ -112,6 +114,9 @@
       if (typeof s.replyDelayMax !== 'number') s.replyDelayMax = 7000;
       if (typeof s.typingIndicatorEnabled !== 'boolean') s.typingIndicatorEnabled = true;
       if (!Array.isArray(s.statusPool) || !s.statusPool.length) s.statusPool = STATUS_POOL.slice();
+
+      if (typeof db.me.wxid !== 'string' || !db.me.wxid) db.me.wxid = 'asdf' + Math.floor(100000 + Math.random() * 899999);
+      if (typeof db.me.status !== 'string') db.me.status = '';
 
       db.friends.forEach(function (f) {
         if (typeof f.region !== 'string') f.region = '';
@@ -311,16 +316,23 @@
     closeMenu();
     $('#page-chat').classList.toggle('active', key === 'chat');
     $('#page-contacts').classList.toggle('active', key === 'contacts');
-    $('#page-other').classList.toggle('active', key !== 'chat' && key !== 'contacts');
+    $('#page-discover').classList.toggle('active', key === 'discover');
+    $('#page-me').classList.toggle('active', key === 'me');
+    // 我：微信「我」页没有导航标题栏
+    $('.header').classList.toggle('header-off', key === 'me');
+    $('#headerActions').classList.toggle('hidden', key === 'me');
     var title = $('#title');
     if (key === 'chat') {
       renderClock();
+    } else if (key === 'me') {
+      title.classList.remove('live');
+      title.textContent = '';
     } else {
       title.classList.remove('live');
       title.textContent = NAMES[key];
     }
     if (key === 'contacts') renderContacts();
-    if (key !== 'chat' && key !== 'contacts') $('#otherTip').textContent = NAMES[key] + ' 页面待实现';
+    if (key === 'me') renderMe();
   }
 
   function openScreen(id) {
@@ -570,6 +582,116 @@
     }
   }
 
+  /* ================= 我 / 朋友圈 ================= */
+  var STATUS_OPTS = [
+    { e: '😊', t: '开心' }, { e: '😴', t: '睡觉' }, { e: '😵', t: '忙' },
+    { e: '🐟', t: '摸鱼' }, { e: '🏃', t: '运动' }, { e: '✈️', t: '出差' },
+    { e: '📚', t: '学习' }, { e: '🎵', t: '听歌' }
+  ];
+
+  function renderMe() {
+    var me = DB.me;
+    var av = $('#meAvatar');
+    if (me.avatar) {
+      av.innerHTML = '<img src="' + me.avatar + '" alt="">';
+      av.style.background = 'transparent';
+    } else {
+      av.innerHTML = esc(initial(me.name));
+      av.style.background = me.color;
+    }
+    $('#meName').textContent = me.name;
+    $('#meWxid').textContent = '微信号：' + (me.wxid || '');
+    $('#meStatusText').textContent = me.status || '状态';
+    $('#meStatusBtn').querySelector('.plus').classList.toggle('hidden', !!me.status);
+  }
+
+  function openStatusSheet() {
+    var list = STATUS_OPTS.map(function (o) {
+      return '<button class="status-opt" data-status="' + esc(o.t) + '"><span class="so-emoji">' + o.e + '</span><span>' + esc(o.t) + '</span></button>';
+    }).join('');
+    if (DB.me.status) list += '<button class="status-opt" data-status=""><span class="so-emoji">✖️</span><span>清除状态</span></button>';
+    $('#statusOptions').innerHTML = list;
+    openSheet('sheetStatus');
+  }
+
+  var PHOTO_GRADS = [
+    'linear-gradient(150deg,#8FA9BF,#5B7488 55%,#3E5566)',
+    'linear-gradient(160deg,#A8C3A0,#6E8F6E 60%,#4A6650)',
+    'linear-gradient(140deg,#E0C9A6,#C29B75 55%,#8E6F51)',
+    'linear-gradient(150deg,#C7B9D6,#9A86B5 60%,#6E5C8C)',
+    'linear-gradient(160deg,#F0D5CF,#D9A79C 60%,#A9736A)',
+    'linear-gradient(150deg,#BFD3D9,#8FAEB8 60%,#5E7C86)'
+  ];
+
+  function avatarMini(f) {
+    if (f && f.avatar) return '<img src="' + f.avatar + '" alt="">';
+    return '<span style="background:' + ((f && f.color) || '#999') + '">' + esc(initial(f && f.name)) + '</span>';
+  }
+
+  var MOMENTS_FEED = [
+    {
+      who: 'f1',
+      text: '雨停了，出门散步，空气很干净。',
+      pics: [0, 1, 2],
+      time: '2小时前',
+      likes: ['f2', 'me'],
+      comments: [{ who: 'f2', text: '好会拍' }]
+    },
+    {
+      who: 'f2',
+      text: '随手写了几句，抽到了这句还挺喜欢。',
+      pics: [3],
+      time: '5小时前',
+      likes: ['me'],
+      comments: []
+    },
+    {
+      who: 'me',
+      text: '第一次用这个聊天原型，还挺像那么回事。',
+      pics: [5],
+      time: '昨天',
+      likes: ['f1'],
+      comments: [{ who: 'f1', text: '不错啊' }]
+    }
+  ];
+
+  function personOf(who) {
+    return who === 'me' ? DB.me : friendById(who) || { name: '好友', color: '#9AA7B4' };
+  }
+
+  function renderMoments() {
+    var me = DB.me;
+    $('#momentsName').textContent = me.name;
+    var muav = $('#momentsAvatar');
+    if (me.avatar) { muav.innerHTML = '<img src="' + me.avatar + '" alt="">'; muav.style.background = 'transparent'; }
+    else { muav.innerHTML = esc(initial(me.name)); muav.style.background = me.color; }
+    $('#momentsCoverArt').style.background = 'linear-gradient(165deg,#A9C1D2,#6E889C 58%,#41576B)';
+
+    var html = MOMENTS_FEED.map(function (p) {
+      var person = personOf(p.who);
+      var imgs = p.pics.length ? '<div class="mp-imgs n' + Math.min(p.pics.length, 3) + '">' +
+        p.pics.map(function (i) {
+          return '<div class="mp-img" style="background:' + PHOTO_GRADS[i % PHOTO_GRADS.length] + '"></div>';
+        }).join('') + '</div>' : '';
+      var likes = p.likes.length ? '<div class="mp-likes"><span class="mp-like-ico">♥</span>' +
+        p.likes.map(function (w) { return esc(personOf(w).name); }).join('、') + '</div>' : '';
+      var comments = p.comments.map(function (c) {
+        return '<div class="mp-comment"><b>' + esc(personOf(c.who).name) + '：</b>' + esc(c.text) + '</div>';
+      }).join('');
+      return '<div class="mp">' +
+        '<div class="mp-av">' + avatarMini(person) + '</div>' +
+        '<div class="mp-main">' +
+        '<div class="mp-name">' + esc(person.name) + '</div>' +
+        '<div class="mp-text">' + esc(p.text) + '</div>' + imgs +
+        '<div class="mp-foot"><span class="mp-time">' + esc(p.time) + '</span>' +
+        '<span class="mp-acts"><button class="mp-act" data-like="1">♥</button><button class="mp-act" data-cmt="1">💬</button></span></div>' +
+        (likes || comments ? '<div class="mp-social">' + likes + comments + '</div>' : '') +
+        '</div></div>';
+    }).join('');
+    $('#momentsList').innerHTML = html;
+    $('#momentsScroll').scrollTop = 0;
+  }
+
   /* ================= 好友资料 ================= */
   function openProfile(fid) {
     var f = friendById(fid);
@@ -788,6 +910,7 @@
     var has = !!el.value.trim();
     $('#sendBtn').classList.toggle('hidden', !has);
     $('#sendBtn').disabled = !has;
+    $('#cardDots').classList.toggle('hidden', has);
     // 微信式多行输入：随内容自动长高，超过 5 行可上下滑动
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 112) + 'px';
@@ -887,7 +1010,7 @@
     return changed;
   }
 
-  /* ================= 三个点：让对方用字卡说话 ================= */
+  // 输入框右侧三个点：让对方随机用字卡说话
   function partnerCardReply() {
     var g = groupById(activeGroupId);
     if (!g) return;
@@ -898,7 +1021,6 @@
     if (!pool.length) { toast('字卡库是空的，先去加号里添加字卡'); return; }
     if (replyTimer) { clearTimeout(replyTimer); replyTimer = null; }
     showTyping(f);
-    var delay = 900 + Math.random() * 1600;
     replyTimer = setTimeout(function () {
       replyTimer = null;
       hideTyping();
@@ -908,7 +1030,7 @@
       markMineRead(g2);
       g2.messages.push({
         id: uid('m_'),
-        type: 'card',
+        type: 'text',
         text: card.content,
         ts: Date.now(),
         mine: false,
@@ -918,7 +1040,7 @@
       renderMessages();
       renderChatList();
       scrollMessages();
-    }, delay);
+    }, 900 + Math.random() * 1600);
   }
 
   function tickStatuses() {
@@ -952,7 +1074,7 @@
   function setVoiceMode(on) {
     voiceMode = !!on;
     $('#msgInput').classList.toggle('hidden', voiceMode);
-    $('#cardDots').classList.toggle('hidden', voiceMode);
+    $('#cardDots').classList.add('hidden');
     $('#holdTalk').classList.toggle('hidden', !voiceMode);
     $('#icoVoice').classList.toggle('hidden', voiceMode);
     $('#icoKeyboard').classList.toggle('hidden', !voiceMode);
@@ -1765,6 +1887,45 @@
       if (tab) switchTab(tab.dataset.tab);
     });
 
+    /* 发现 / 我 */
+    $('#page-discover').addEventListener('click', function (e) {
+      var row = e.target.closest('.wx-row');
+      if (!row) return;
+      if (row.dataset.route === 'moments') openMoments();
+      else toast((row.dataset.todo || '该功能') + '待开发');
+    });
+    $('#page-me').addEventListener('click', function (e) {
+      var row = e.target.closest('.wx-row');
+      if (row) {
+        if (row.dataset.route === 'moments') openMoments();
+        else toast((row.dataset.todo || '该功能') + '待开发');
+      }
+    });
+    $('#meProfileBtn').addEventListener('click', openMyProfile);
+    $('#meMomentsBtn').addEventListener('click', openMoments);
+    $('#meStatusBtn').addEventListener('click', openStatusSheet);
+    $('#statusOptions').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-status]');
+      if (!b) return;
+      DB.me.status = b.dataset.status;
+      saveDB();
+      renderMe();
+      closeSheets();
+      toast(DB.me.status ? '状态已更新' : '已清除状态');
+    });
+
+    /* 朋友圈 */
+    function openMoments() {
+      renderMoments();
+      openScreen('pageMoments');
+    }
+    $('#momentsBack').addEventListener('click', function () { closeScreen('pageMoments'); });
+    $('#momentsCam').addEventListener('click', function () { toast('发表朋友圈待开发'); });
+    $('#momentsList').addEventListener('click', function (e) {
+      if (e.target.closest('[data-like]')) { toast('已点赞'); return; }
+      if (e.target.closest('[data-cmt]')) { toast('评论待开发'); return; }
+    });
+
     /* 弹层关闭 */
     $('#sheetMask').addEventListener('click', closeSheets);
     $$('[data-close]').forEach(function (btn) {
@@ -1880,13 +2041,11 @@
       }
     });
 
-    /* 三个点：让对方用字卡说话 */
-    $('#cardDots').addEventListener('click', partnerCardReply);
-
     /* 语音 */
     $('#voiceToggle').addEventListener('click', function () {
       setVoiceMode(!voiceMode);
     });
+    $('#cardDots').addEventListener('click', partnerCardReply);
     $('#holdTalk').addEventListener(PDOWN, function (e) {
       e.preventDefault();
       startRec(e);
