@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EDEDED">
 <title>聊天</title>
-<link rel="stylesheet" href="css/style.css?v=20261029c">
+<link rel="stylesheet" href="css/style.css?v=20261030c">
 </head>
 <body>
 <div class="phone" id="phone">
@@ -39,8 +39,168 @@
         <div class="contacts-list" id="contactsList"></div>
         <div class="index-rail" id="indexRail"></div>
       </section>
-      <section class="page" id="page-other">
-        <div class="empty-tip" id="otherTip">页面待实现</div>
+      <section class="page" id="page-discover">
+        <div class="wx-list">
+          <div class="wx-group">
+            <button class="wx-row" data-route="moments">
+              <span class="wx-ico ico-moments">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="8.6" stroke="#5AAE5A"/><circle cx="12" cy="12" r="4.6" stroke="#E8A143"/><path d="M12 3.4v17.2M3.4 12h17.2" stroke="#5B8DE8" stroke-opacity=".55"/></svg>
+              </span>
+              <span class="wx-name">朋友圈</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="视频号">
+              <span class="wx-ico ico-channels">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#E8973C" stroke-width="2"><path d="M4 6.6l8 10.8 8-10.8" stroke-linecap="round"/><path d="M8.4 6.6l3.6 4.9 3.6-4.9" stroke="#E8973C" stroke-opacity=".45"/></svg>
+              </span>
+              <span class="wx-name">视频号</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="直播">
+              <span class="wx-ico ico-live">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#C96A5A" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.2"/></svg>
+              </span>
+              <span class="wx-name">直播</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="扫一扫">
+              <span class="wx-ico ico-scan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4C8FE0" stroke-width="1.7"><rect x="4" y="4" width="5.4" height="5.4" rx="1.2"/><rect x="14.6" y="4" width="5.4" height="5.4" rx="1.2"/><rect x="4" y="14.6" width="5.4" height="5.4" rx="1.2"/><path d="M14.6 14.6h5.4v5.4" stroke-linecap="round"/></svg>
+              </span>
+              <span class="wx-name">扫一扫</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="听一听">
+              <span class="wx-ico ico-listen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D95A5A" stroke-width="1.7" stroke-linecap="round"><path d="M9 17.4V6.2l8-2v11.2"/><circle cx="6.6" cy="17.6" r="2.5"/><circle cx="14.6" cy="15.4" r="2.5"/></svg>
+              </span>
+              <span class="wx-name">听一听</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="看一看">
+              <span class="wx-ico ico-look">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D8A02E" stroke-width="1.6"><circle cx="12" cy="12" r="3.4"/><path d="M12 3.4c1 2.2 2.4 3.4 5 3.4M20.6 12c-2.2 1-3.4 2.4-3.4 5M12 20.6c-1-2.2-2.4-3.4-5-3.4M3.4 12c2.2-1 3.4-2.4 3.4-5" stroke-linecap="round"/></svg>
+              </span>
+              <span class="wx-name">看一看</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="搜一搜">
+              <span class="wx-ico ico-searchx">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D95A5A" stroke-width="1.7" stroke-linecap="round"><path d="M12 3.6l2.4 5.6 5.6 2.4-5.6 2.4-2.4 5.6-2.4-5.6L3.6 11.6l5.6-2.4z"/></svg>
+              </span>
+              <span class="wx-name">搜一搜</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="附近的人">
+              <span class="wx-ico ico-nearby">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4C8FE0" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8.6" r="2.8"/><path d="M4 19.4c.4-3 2.4-4.8 5-4.8s4.6 1.8 5 4.8"/><circle cx="16.6" cy="9.6" r="2.2" stroke-opacity=".7"/><path d="M13.6 18.4c.3-2.2 1.6-3.6 3-3.6" stroke-opacity=".7"/></svg>
+              </span>
+              <span class="wx-name">附近的人</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="游戏">
+              <span class="wx-ico ico-game">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#8A6BD6" stroke-width="1.6"><rect x="3.6" y="7" width="16.8" height="10" rx="3.2"/><path d="M8 10v4M6 12h4" stroke-linecap="round"/><circle cx="15.4" cy="11" r="1.1" fill="#8A6BD6" stroke="none"/><circle cx="17.6" cy="13.2" r="1.1" fill="#8A6BD6" stroke="none"/></svg>
+              </span>
+              <span class="wx-name">游戏</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="小程序">
+              <span class="wx-ico ico-mini">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5B7FE0" stroke-width="1.7"><circle cx="12" cy="12" r="8.4"/><path d="M8 14.4c1.8-3.4 5-5.2 7.4-4.6-1 2.6-3.6 4.8-7.4 4.6z" stroke-linecap="round"/></svg>
+              </span>
+              <span class="wx-name">小程序</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+        </div>
+      </section>
+      <section class="page" id="page-me">
+        <div class="me-body">
+          <div class="me-card">
+            <button class="me-profile" id="meProfileBtn">
+              <div class="me-av" id="meAvatar"></div>
+              <div class="me-info">
+                <div class="me-name" id="meName">我</div>
+                <div class="me-wxid" id="meWxid">微信号：wxid_000000</div>
+              </div>
+              <span class="me-qr" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.6" y="3.6" width="5.4" height="5.4" rx="1"/><rect x="15" y="3.6" width="5.4" height="5.4" rx="1"/><rect x="3.6" y="15" width="5.4" height="5.4" rx="1"/><path d="M15 15h2.4v2.4H15zM20.4 15v5.4M15 20.4h2.4" stroke-linecap="round"/></svg>
+              </span>
+            </button>
+            <div class="me-pills">
+              <button class="me-pill" id="meStatusBtn"><span class="plus">＋</span><span id="meStatusText">状态</span></button>
+              <button class="me-pill round" id="meMomentsBtn" aria-label="朋友圈">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4.2"/><path d="M12 3.6c1.2 2.4 2.8 3.6 5.4 3.6M20.4 12c-2.4 1.2-3.6 2.8-3.6 5.4M12 20.4c-1.2-2.4-2.8-3.6-5.4-3.6M3.6 12c2.4-1.2 3.6-2.8 3.6-5.4" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="服务">
+              <span class="wx-ico ico-service">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3FAE6F" stroke-width="1.7"><circle cx="12" cy="12" r="8.4"/><path d="M8.4 12.4l2.6 2.6 4.6-5" stroke-linecap="round"/></svg>
+              </span>
+              <span class="wx-name">服务</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="收藏">
+              <span class="wx-ico ico-fav">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#E8A143" stroke-width="1.6"><path d="M12 3.6l7 4v8.8l-7 4-7-4V7.6z"/><path d="M5 7.6l7 4 7-4M12 11.6v8.8" stroke-opacity=".5"/></svg>
+              </span>
+              <span class="wx-name">收藏</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-route="moments">
+              <span class="wx-ico ico-moments">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4C8FE0" stroke-width="1.6"><rect x="3.6" y="4.6" width="16.8" height="14.8" rx="2"/><path d="M3.6 15.4l4.4-4.2 4 3.6 3.4-3 4.6 4" stroke-linecap="round"/><circle cx="8.2" cy="8.4" r="1.6"/></svg>
+              </span>
+              <span class="wx-name">朋友圈</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="作品">
+              <span class="wx-ico ico-work">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5B7FE0" stroke-width="1.6"><rect x="4.6" y="3.6" width="14.8" height="16.8" rx="2"/><path d="M7.6 8h8M7.6 12h8M7.6 16h5" stroke-linecap="round"/></svg>
+              </span>
+              <span class="wx-name">作品</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="小店与卡包">
+              <span class="wx-ico ico-shop">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#C96A5A" stroke-width="1.6"><path d="M4 8.6h16v10H4z"/><path d="M4 8.6c0-2 2.2-3.6 4.8-3.6 1.4 0 2.6.8 3.2 2 0.6-1.2 1.8-2 3.2-2 2.6 0 4.8 1.6 4.8 3.6" stroke-linecap="round"/></svg>
+              </span>
+              <span class="wx-name">小店与卡包</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="表情">
+              <span class="wx-ico ico-sticker">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D9A62E" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><path d="M8.6 14a4.2 4.2 0 0 0 6.8 0" stroke-linecap="round"/><circle cx="9" cy="9.4" r=".95" fill="#D9A62E" stroke="none"/><circle cx="15" cy="9.4" r=".95" fill="#D9A62E" stroke="none"/></svg>
+              </span>
+              <span class="wx-name">表情</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="设置">
+              <span class="wx-ico ico-settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4C8FE0" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 3.6v2.6M12 17.8v2.6M20.4 12h-2.6M6.2 12H3.6M17.9 6.1l-1.8 1.8M7.9 16.1l-1.8 1.8M17.9 17.9l-1.8-1.8M7.9 7.9L6.1 6.1" stroke-linecap="round"/></svg>
+              </span>
+              <span class="wx-name">设置</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+        </div>
       </section>
     </div>
 
@@ -319,7 +479,7 @@
         <div class="comp-field">
           <textarea class="msg-input" id="msgInput" rows="1"></textarea>
           <button class="comp-dots" id="cardDots" aria-label="对方用字卡">
-            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg>
           </button>
           <button class="hold-talk hidden" id="holdTalk">按住 说话</button>
           <button class="send-inline hidden" id="sendBtn">发送</button>
@@ -414,6 +574,41 @@
           <div class="ci-row" id="clearChat"><span>清空聊天记录</span><span class="chev">›</span></div>
           <div class="ci-row" id="ciReport"><span>投诉</span><span class="chev">›</span></div>
         </div>
+      </div>
+    </div>
+
+    <!-- 朋友圈 -->
+    <div class="screen-page moments-page" id="pageMoments" aria-hidden="true">
+      <div class="moments-head">
+        <button class="moments-back" id="momentsBack" aria-label="返回">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5 8 12l7.5 7.5"/></svg>
+        </button>
+        <button class="moments-cam" id="momentsCam" aria-label="发表">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"><rect x="3.2" y="6.6" width="17.6" height="12.4" rx="2.4"/><circle cx="12" cy="12.8" r="3.4"/><path d="M8.6 6.6l1.2-2.2h4.4l1.2 2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="moments-scroll" id="momentsScroll">
+        <div class="moments-cover" id="momentsCover">
+          <div class="cover-art" id="momentsCoverArt"></div>
+          <div class="moments-user">
+            <div class="mu-name" id="momentsName">我</div>
+            <div class="mu-av" id="momentsAvatar"></div>
+          </div>
+        </div>
+        <div class="moments-list" id="momentsList"></div>
+        <div class="moments-end">— 没有更多了 —</div>
+      </div>
+    </div>
+
+    <!-- 我的状态 -->
+    <div class="sheet" id="sheetStatus" aria-hidden="true">
+      <div class="sheet-head">
+        <button class="link muted" data-close>取消</button>
+        <div class="sheet-title">状态</div>
+        <span class="link placeholder-link"></span>
+      </div>
+      <div class="sheet-body">
+        <div class="status-options" id="statusOptions"></div>
       </div>
     </div>
 
@@ -569,6 +764,6 @@
 
   </div>
 </div>
-<script src="js/app.js?v=20261029c"></script>
+<script src="js/app.js?v=20261030c"></script>
 </body>
 </html>
