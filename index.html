@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EDEDED">
 <title>聊天</title>
-<link rel="stylesheet" href="css/style.css?v=20261030c">
+<link rel="stylesheet" href="css/style.css?v=20261103e">
 </head>
 <body>
 <div class="phone" id="phone">
@@ -44,43 +44,43 @@
           <div class="wx-group">
             <button class="wx-row" data-route="moments">
               <span class="wx-ico ico-moments">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="8.6" stroke="#5AAE5A"/><circle cx="12" cy="12" r="4.6" stroke="#E8A143"/><path d="M12 3.4v17.2M3.4 12h17.2" stroke="#5B8DE8" stroke-opacity=".55"/></svg>
+                <img src="img/moments.png" alt="">
               </span>
               <span class="wx-name">朋友圈</span>
               <span class="chev">›</span>
             </button>
           </div>
           <div class="wx-group">
-            <button class="wx-row" data-todo="视频号">
+            <button class="wx-row" data-todo="漂流瓶">
               <span class="wx-ico ico-channels">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#E8973C" stroke-width="2"><path d="M4 6.6l8 10.8 8-10.8" stroke-linecap="round"/><path d="M8.4 6.6l3.6 4.9 3.6-4.9" stroke="#E8973C" stroke-opacity=".45"/></svg>
+                <img src="img/bottle.png" alt="">
               </span>
-              <span class="wx-name">视频号</span>
+              <span class="wx-name">漂流瓶</span>
               <span class="chev">›</span>
             </button>
           </div>
           <div class="wx-group">
-            <button class="wx-row" data-todo="直播">
-              <span class="wx-ico ico-live">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#C96A5A" stroke-width="1.6"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.2"/></svg>
-              </span>
-              <span class="wx-name">直播</span>
-              <span class="chev">›</span>
-            </button>
-          </div>
-          <div class="wx-group">
-            <button class="wx-row" data-todo="扫一扫">
-              <span class="wx-ico ico-scan">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#4C8FE0" stroke-width="1.7"><rect x="4" y="4" width="5.4" height="5.4" rx="1.2"/><rect x="14.6" y="4" width="5.4" height="5.4" rx="1.2"/><rect x="4" y="14.6" width="5.4" height="5.4" rx="1.2"/><path d="M14.6 14.6h5.4v5.4" stroke-linecap="round"/></svg>
-              </span>
-              <span class="wx-name">扫一扫</span>
-              <span class="chev">›</span>
-            </button>
             <button class="wx-row" data-todo="听一听">
-              <span class="wx-ico ico-listen">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#D95A5A" stroke-width="1.7" stroke-linecap="round"><path d="M9 17.4V6.2l8-2v11.2"/><circle cx="6.6" cy="17.6" r="2.5"/><circle cx="14.6" cy="15.4" r="2.5"/></svg>
+              <span class="wx-ico ico-live">
+                <img src="img/listen.png" alt="">
               </span>
               <span class="wx-name">听一听</span>
+              <span class="chev">›</span>
+            </button>
+          </div>
+          <div class="wx-group">
+            <button class="wx-row" data-todo="Ta的小事">
+              <span class="wx-ico ico-scan">
+                <img src="img/declare.png" alt="">
+              </span>
+              <span class="wx-name">Ta的小事</span>
+              <span class="chev">›</span>
+            </button>
+            <button class="wx-row" data-todo="我的事件簿">
+              <span class="wx-ico ico-listen">
+                <img src="img/diary.png" alt="">
+              </span>
+              <span class="wx-name">我的事件簿</span>
               <span class="chev">›</span>
             </button>
           </div>
@@ -232,7 +232,6 @@
         <span>我</span>
       </button>
     </div>
-    <div class="home-indicator"><i></i></div>
 
     <!-- 加号菜单 -->
     <div class="mask" id="mask"></div>
@@ -622,6 +621,43 @@
       <div class="sheet-body" id="addMemberList"></div>
     </div>
 
+    <!-- 长按气泡菜单 -->
+    <div class="bubble-menu-mask hidden" id="bubbleMenuMask"></div>
+    <div class="bubble-menu hidden" id="bubbleMenu" aria-hidden="true">
+      <button class="bm-btn" data-bm="reply">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14.4l-4-4 4-4"/><path d="M5 10.4h10.4a4 4 0 0 1 4 4v3.2"/></svg></span>
+        <span>回复</span>
+      </button>
+      <button class="bm-btn" data-bm="quote">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 7h4v4H7zM13 7h4v4h-4zM7 13h4v4H7zM13 13h4v4h-4z"/></svg></span>
+        <span>引用</span>
+      </button>
+      <button class="bm-btn" data-bm="copy">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>
+        <span>复制</span>
+      </button>
+      <button class="bm-btn" data-bm="collect">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.6l7 4v8.8l-7 4-7-4V7.6z"/><path d="M5 7.6l7 4 7-4M12 11.6v8.8" stroke-opacity=".5"/></svg></span>
+        <span>收藏</span>
+      </button>
+      <button class="bm-btn" data-bm="translate">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 5h7M8 3v2c0 4-2 6-5 6M11 3c-2 3-3 5-3 6 0 1 1 2 3 2M13 8h7M16 7v2M14 14l5 5M19 14l-5 5"/></svg></span>
+        <span>翻译</span>
+      </button>
+      <button class="bm-btn" data-bm="recall">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 4v8M6 8l6-4 6 4"/></svg></span>
+        <span>撤回</span>
+      </button>
+      <button class="bm-btn" data-bm="delete">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span>
+        <span>删除</span>
+      </button>
+      <button class="bm-btn" data-bm="multi">
+        <span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="5" y="5" width="6" height="6" rx="1.2"/><rect x="13" y="5" width="6" height="6" rx="1.2"/><rect x="5" y="13" width="6" height="6" rx="1.2"/><rect x="13" y="13" width="6" height="6" rx="1.2"/></svg></span>
+        <span>多选</span>
+      </button>
+    </div>
+
     <!-- 音视频通话 -->
     <div class="call-screen" id="callScreen" aria-hidden="true">
       <div class="call-bg"></div>
@@ -693,16 +729,16 @@
       <div class="sheet-body">
         <div class="setting-row"><span>显示「正在输入」</span><button class="switch" id="swTyping" aria-label="正在输入提示"></button></div>
         <div class="setting-block">
-          <div class="setting-label">回复延迟（毫秒）</div>
+          <div class="setting-label">回复延迟（秒）</div>
           <div class="delay-row">
-            <div class="delay-field"><label>最短</label><input type="number" id="delayMin" min="0" max="60000" step="500"></div>
+            <div class="delay-field"><label>最短</label><input type="number" id="delayMin" min="0" max="60" step="0.5"></div>
             <span class="delay-sep">~</span>
-            <div class="delay-field"><label>最长</label><input type="number" id="delayMax" min="0" max="60000" step="500"></div>
+            <div class="delay-field"><label>最长</label><input type="number" id="delayMax" min="0" max="60" step="0.5"></div>
           </div>
           <div class="delay-presets">
-            <button data-preset="1000,3000">快</button>
-            <button data-preset="3000,7000">正常</button>
-            <button data-preset="6000,12000">慢</button>
+            <button data-preset="1,3">快</button>
+            <button data-preset="3,7">正常</button>
+            <button data-preset="6,12">慢</button>
           </div>
         </div>
         <div class="setting-block">
@@ -764,6 +800,6 @@
 
   </div>
 </div>
-<script src="js/app.js?v=20261030c"></script>
+<script src="js/app.js?v=20261103d"></script>
 </body>
 </html>

@@ -117,6 +117,7 @@
 
       if (typeof db.me.wxid !== 'string' || !db.me.wxid) db.me.wxid = 'asdf' + Math.floor(100000 + Math.random() * 899999);
       if (typeof db.me.status !== 'string') db.me.status = '';
+      if (!Array.isArray(db.favorites)) db.favorites = [];
 
       db.friends.forEach(function (f) {
         if (typeof f.region !== 'string') f.region = '';
@@ -133,6 +134,7 @@
         groups: [],
         cards: [],
         cardGroups: [],
+        favorites: [],
         emojiGroups: normalizeEmojiGroups(null),
         settings: { replyDelayMin: 3000, replyDelayMax: 7000, typingIndicatorEnabled: true, statusPool: ['在线', '忙碌中', '摸鱼中', '在听歌', '发呆', '出门散步', '学习中', '追剧中', '健身中', '准备休息'] }
       };
@@ -209,6 +211,12 @@
       }
     }
     return res;
+  }
+
+  // 毫秒 → 秒（去掉多余的 .0）
+  function secOf(ms) {
+    var s = Math.round((Number(ms) || 0) / 100) / 10;
+    return String(s);
   }
 
   function toast(msg) {
@@ -845,6 +853,11 @@
   }
 
   function bubbleHTML(m) {
+    // 撤回消息
+    if (m.recalled) {
+      var who = m.mine !== false ? '你' : (m.senderId ? (friendById(m.senderId) || {}).name || '对方' : '对方');
+      return '<div class="msg recalled"><div class="msg-body"><div class="recall-tip">' + esc(who) + '撤回了一条消息</div></div></div>';
+    }
     var inner;
     if (m.type === 'voice') {
       inner = '<div class="bubble voice" data-play="1"><span class="voice-bars"><i></i><i></i><i></i></span><span class="voice-len">' + (m.dur || 1) + '"</span></div>';
@@ -1448,8 +1461,8 @@
 
   function openAppSettings() {
     $('#swTyping').classList.toggle('active', !!DB.settings.typingIndicatorEnabled);
-    $('#delayMin').value = DB.settings.replyDelayMin;
-    $('#delayMax').value = DB.settings.replyDelayMax;
+    $('#delayMin').value = secOf(DB.settings.replyDelayMin);
+    $('#delayMax').value = secOf(DB.settings.replyDelayMax);
     openSheet('sheetAppSettings');
   }
 
@@ -2019,6 +2032,16 @@
     });
     $('#chatMore').addEventListener('click', openChatSettings);
     $('#msgInput').addEventListener('input', updateSendState);
+    // 点输入框：收起表情 / 加号面板，只留输入框和键盘
+    $('#msgInput').addEventListener('focus', closePanels);
+    $('#msgInput').addEventListener('click', closePanels);
+    var _compField = document.querySelector('#pageChatDetail .comp-field');
+    if (_compField) {
+      _compField.addEventListener('click', function (e) {
+        if (e.target.closest('#cardDots')) return;
+        closePanels();
+      });
+    }
     $('#msgInput').addEventListener('keydown', function (e) {
       // 桌面端 Enter 发送、Shift+Enter 换行；手机端回车 = 换行（微信行为）
       if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) {
@@ -2040,6 +2063,159 @@
         if (document.activeElement === $('#msgInput')) $('#msgInput').blur();
       }
     });
+
+    /* 长按气泡菜单 */
+    var longPressTimer = null;
+    var longPressMsg = null;
+    var longPressEl = null;
+    var longPressX = 0, longPressY = 0;
+    var _PDOWN = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+    var _PUP = 'ontouchstart' in window ? 'touchend' : 'mouseup';
+    var _PCANC = 'ontouchstart' in window ? 'touchcancel' : 'mouseleave';
+    $('#msgArea').addEventListener(_PDOWN, function (e) {
+      var msgEl = e.target.closest('.msg');
+      if (!msgEl || msgEl.classList.contains('recalled')) return;
+      longPressEl = msgEl;
+      longPressMsg = msgEl.dataset.mid;
+      var rect = msgEl.querySelector('.bubble') ? msgEl.querySelector('.bubble').getBoundingClientRect() : msgEl.getBoundingClientRect();
+      longPressX = rect.left + rect.width / 2;
+      longPressY = rect.top;
+      longPressTimer = setTimeout(openBubbleMenu, 320);
+    });
+    $('#msgArea').addEventListener(_PUP, function () {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    });
+    $('#msgArea').addEventListener(_PCANC, function () {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    });
+    $('#msgArea').addEventListener('click', function () {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }, true); // 捕获阶段优先清掉
+
+    function openBubbleMenu() {
+      if (!longPressMsg) return;
+      var g = groupById(activeGroupId);
+      if (!g) return;
+      var m = g.messages.filter(function (x) { return x.id === longPressMsg; })[0];
+      if (!m) return;
+
+      // 渲染菜单按钮：根据消息类型和时间禁用/启用
+      var now = Date.now();
+      var within2min = now - (m.ts || 0) <= 2 * 60 * 1000;
+      var mine = m.mine !== false;
+      var hasText = m.type === 'text' || m.type === 'card' || (m.type === 'sticker' && !m.sticker);
+
+      var btns = {
+        reply: !mine,                 // 只能回复对方
+        quote: true,                  // 引用总可用
+        copy: hasText,                // 有文字才能复制
+        collect: true,                // 收藏总可用
+        translate: hasText,           // 有文字才能翻译
+        recall: mine && within2min,   // 自己发的2分钟内
+        delete: true,                 // 删除总可用
+        multi: true                   // 多选总可用
+      };
+
+      var menu = $('#bubbleMenu');
+      var mask = $('#bubbleMenuMask');
+      menu.innerHTML = BUBBLE_MENU_HTML.map(function (b) {
+        var d = btns[b.key] ? '' : ' disabled';
+        return '<button class="bm-btn' + d + '" data-bm="' + b.key + '">' + b.html + '<span>' + b.label + '</span></button>';
+      }).join('');
+
+      // 定位：在气泡上方
+      var areaRect = $('#msgArea').getBoundingClientRect();
+      var elRect = longPressEl.querySelector('.bubble').getBoundingClientRect();
+      var top = elRect.top - areaRect.top - 10;
+      var left = elRect.left - areaRect.left + elRect.width / 2;
+      if (top < 120) top = elRect.bottom - areaRect.top + 10; // 太靠上则放到下面
+      menu.style.top = top + 'px';
+      menu.style.left = left + 'px';
+
+      mask.classList.remove('hidden');
+      menu.classList.remove('hidden');
+      requestAnimationFrame(function () { menu.classList.add('show'); });
+
+      // 选中/高亮气泡
+      longPressEl.classList.add('menu-highlight');
+    }
+
+    function closeBubbleMenu() {
+      $('#bubbleMenuMask').classList.add('hidden');
+      $('#bubbleMenu').classList.remove('show');
+      $('#bubbleMenu').classList.add('hidden');
+      if (longPressEl) longPressEl.classList.remove('menu-highlight');
+      longPressEl = null;
+      longPressMsg = null;
+    }
+    $('#bubbleMenuMask').addEventListener('click', closeBubbleMenu);
+    $('#bubbleMenu').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-bm]');
+      if (!b || b.classList.contains('disabled')) { closeBubbleMenu(); return; }
+      var key = b.dataset.bm;
+      var g = groupById(activeGroupId);
+      var m = g && g.messages.filter(function (x) { return x.id === longPressMsg; })[0];
+      closeBubbleMenu();
+      if (!m) return;
+      handleBubbleAction(key, m);
+    });
+
+    function handleBubbleAction(key, m) {
+      switch (key) {
+        case 'reply':
+        case 'quote':
+          // 引用/回复：把原消息内容塞到输入框前面
+          var text = m.type === 'card' ? m.text : (m.text || '[图片]');
+          $('#msgInput').value = (key === 'reply' ? '回复：' : '引用：') + text + '\n';
+          updateSendState();
+          $('#msgInput').focus();
+          $('#msgInput').selectionStart = 20;
+          break;
+        case 'copy':
+          (navigator.clipboard || { writeText: function (s) { document.execCommand('copy'); var ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, s.length); document.execCommand('copy'); document.body.removeChild(ta); } }).writeText(m.text || '');
+          toast('已复制');
+          break;
+        case 'collect':
+          DB.favorites.push({ mid: m.id, ts: m.ts || Date.now(), msg: m });
+          saveDB();
+          toast('已收藏');
+          break;
+        case 'translate':
+          toast('翻译（即将上线）');
+          break;
+        case 'recall':
+          m.recalled = true;
+          saveDB();
+          renderMessages();
+          renderChatList();
+          toast('已撤回');
+          break;
+        case 'delete': {
+          var g = groupById(activeGroupId);
+          g.messages = g.messages.filter(function (x) { return x.id !== m.id; });
+          saveDB();
+          renderMessages();
+          renderChatList();
+          break;
+        }
+        case 'multi':
+          toast('多选待开发');
+          break;
+      }
+    }
+    var BUBBLE_MENU_HTML = [
+      { key: 'reply', label: '回复', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14.4l-4-4 4-4"/><path d="M5 10.4h10.4a4 4 0 0 1 4 4v3.2"/></svg></span>' },
+      { key: 'quote', label: '引用', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 7h4v4H7zM13 7h4v4h-4zM7 13h4v4H7zM13 13h4v4h-4z"/></svg></span>' },
+      { key: 'copy', label: '复制', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>' },
+      { key: 'collect', label: '收藏', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.6l7 4v8.8l-7 4-7-4V7.6z"/></svg></span>' },
+      { key: 'translate', label: '翻译', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 5h7M8 3v2c0 4-2 6-5 6M11 3c-2 3-3 5-3 6 0 1 1 2 3 2M13 8h7M16 7v2"/></svg></span>' },
+      { key: 'recall', label: '撤回', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 4v8M6 8l6-4 6 4"/></svg></span>' },
+      { key: 'delete', label: '删除', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span>' },
+      { key: 'multi', label: '多选', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="5" y="5" width="6" height="6" rx="1.2"/><rect x="13" y="5" width="6" height="6" rx="1.2"/><rect x="5" y="13" width="6" height="6" rx="1.2"/><rect x="13" y="13" width="6" height="6" rx="1.2"/></svg></span>' }
+    ];
 
     /* 语音 */
     $('#voiceToggle').addEventListener('click', function () {
@@ -2358,24 +2534,26 @@
       saveDB();
     });
     $('#delayMin').addEventListener('change', function () {
-      var v = parseInt(this.value) || 0;
-      DB.settings.replyDelayMin = Math.max(0, v);
+      var v = parseFloat(this.value) || 0;
+      DB.settings.replyDelayMin = Math.max(0, Math.round(v * 1000));
       if (DB.settings.replyDelayMin > DB.settings.replyDelayMax) DB.settings.replyDelayMax = DB.settings.replyDelayMin;
+      this.value = secOf(DB.settings.replyDelayMin);
+      $('#delayMax').value = secOf(DB.settings.replyDelayMax);
       saveDB();
     });
     $('#delayMax').addEventListener('change', function () {
-      var v = parseInt(this.value) || 0;
-      DB.settings.replyDelayMax = Math.max(DB.settings.replyDelayMin, v);
-      this.value = DB.settings.replyDelayMax;
+      var v = parseFloat(this.value) || 0;
+      DB.settings.replyDelayMax = Math.max(DB.settings.replyDelayMin, Math.round(v * 1000));
+      this.value = secOf(DB.settings.replyDelayMax);
       saveDB();
     });
     $$('.delay-presets button').forEach(function (b) {
       b.addEventListener('click', function () {
         var parts = this.dataset.preset.split(',');
-        DB.settings.replyDelayMin = parseInt(parts[0]);
-        DB.settings.replyDelayMax = parseInt(parts[1]);
-        $('#delayMin').value = DB.settings.replyDelayMin;
-        $('#delayMax').value = DB.settings.replyDelayMax;
+        DB.settings.replyDelayMin = Math.round(parseFloat(parts[0]) * 1000);
+        DB.settings.replyDelayMax = Math.round(parseFloat(parts[1]) * 1000);
+        $('#delayMin').value = secOf(DB.settings.replyDelayMin);
+        $('#delayMax').value = secOf(DB.settings.replyDelayMax);
         saveDB();
         toast('已应用');
       });
