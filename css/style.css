@@ -596,17 +596,29 @@ input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;
 .moments-end{text-align:center;font-size:12.5px;color:#B4B4B4;padding:18px 0 10px}
 
 /* ---------- 长按气泡菜单 ---------- */
-.bubble-menu-mask{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.38);z-index:60}
+.bubble-menu-mask{position:absolute;top:0;left:0;right:0;bottom:0;background:transparent;z-index:60}
 .bubble-menu-mask.hidden{display:none}
-.bubble-menu{position:absolute;z-index:70;background:rgba(36,36,36,.97);border-radius:10px;padding:10px;display:flex;gap:10px;flex-wrap:wrap;max-width:280px;box-shadow:0 10px 26px rgba(0,0,0,.3);transform:scale(.9) translateY(6px);opacity:0;pointer-events:none;transition:opacity .14s, transform .14s}
-.bubble-menu.show{transform:scale(1) translateY(0);opacity:1;pointer-events:auto}
-.bubble-menu.hidden{display:flex}
-.bm-btn{width:54px;display:flex;flex-direction:column;align-items:center;gap:4px;background:transparent;color:#fff;font-size:11px;padding:4px 0}
-.bm-btn:active{opacity:.55}
-.bm-btn.disabled{opacity:.3;pointer-events:none}
-.bm-ico{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;margin-bottom:2px}
-.bm-ico svg{width:22px;height:22px;display:block}
-.msg.menu-highlight .bubble{filter:brightness(.95) saturate(.96);outline:2px solid rgba(0,0,0,.06);outline-offset:2px;border-radius:8px}
+.bubble-menu{position:absolute;z-index:70;padding:9px 8px 6px;display:flex;flex-wrap:nowrap;gap:2px;
+  color:#5C4A38;border-radius:15px;border:1px solid rgba(150,120,86,.22);
+  background:
+    radial-gradient(70% 62% at 18% 10%, rgba(237,162,142,.15), transparent 72%),
+    radial-gradient(64% 58% at 88% 86%, rgba(147,179,210,.17), transparent 74%),
+    linear-gradient(158deg,#FFFDF7 0%,#FBF3E4 62%,#F7EBD8 100%);
+  box-shadow:0 10px 20px rgba(96,74,48,.14),inset 0 0 0 1px rgba(255,255,255,.72);
+  transform:translate(-50%,-100%);
+  opacity:0;pointer-events:none}
+.bubble-menu::after{content:"";position:absolute;left:50%;bottom:-6.5px;width:12px;height:12px;border-radius:2px;
+  background:#F9EFDC;border-right:1px solid rgba(150,120,86,.2);border-bottom:1px solid rgba(150,120,86,.2);
+  transform:translateX(-50%) rotate(45deg)}
+.bubble-menu.show{transform:translate(-50%,-100%);opacity:1;pointer-events:auto}
+.bubble-menu.below{transform:translate(-50%,0)}
+.bubble-menu.below.show{transform:translate(-50%,0)}
+.bubble-menu.below::after{bottom:auto;top:-6.5px;transform:translateX(-50%) rotate(225deg)}
+.bm-btn{width:56px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:#5C4A38;font-size:11px;padding:4px 0;border-radius:10px}
+.bm-btn:active{opacity:.6}
+.bm-btn.disabled{opacity:.32;pointer-events:none}
+.bm-ico{width:40px;height:40px;border-radius:13px;background:rgba(255,255,255,.72);border:1px solid rgba(150,120,86,.16);color:#8A6A52;display:flex;align-items:center;justify-content:center;margin-bottom:1px;box-shadow:0 1px 3px rgba(120,96,66,.08)}
+.bm-ico svg{width:21px;height:21px;display:block}
 
 /* 消息多选态 */
 .msg-body.selectable{cursor:pointer}
@@ -614,3 +626,131 @@ input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;
 .msg.selected.checked .msg-body::before{background:var(--green);border-color:var(--green);box-shadow:inset 0 0 0 3px #fff}
 .msg .selected-cb{position:absolute;left:-28px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;border:1.5px solid #B4B4B4;background:#fff;z-index:2}
 .msg.checked .selected-cb{background:var(--green);border-color:var(--green)}
+
+/* ---------- 漂流瓶（水彩插画页） ---------- */
+.bottle-page{
+  --sky-base:#F8F2E7;--sky-a:#EDA28E;--sky-b:#93B3D2;--sky-c:#F2C2A2;
+  --sun-glow:#F5D3A4;--sun-core:#FDEBCB;--sun-halo:#FFE7BB;
+  --sea-a:#9FCBC8;--sea-b:#8FBCCB;--sea-c:#7FA9BF;
+  --beam:#FFE4B2;--spark:#FFF2D4;--horizon:#A6B9C9;--wave:#8FB0C6;
+  --sand:#F3DDBA;--foam:#FFFFFF;--shallow:#9FD8DC;--bird:#6F7F94;
+  --head-ink:#4F4739;--bar-sub:#A48E72;--bar-line:rgba(92,83,70,.08);
+  background:var(--sky-base);transition:background .6s
+}
+/* 凌晨 */
+.bottle-page.t-dawn{
+  --sky-base:#2A3450;--sky-a:#47598A;--sky-b:#354268;--sky-c:#6B6A93;
+  --sun-glow:#C8CFE8;--sun-core:#EDEFF8;--sun-halo:#A9B6D6;
+  --sea-a:#5D7291;--sea-b:#4E6280;--sea-c:#3C4E6B;
+  --beam:#B9C8E6;--spark:#E6EDFF;--horizon:#8FA2C4;--wave:#B7C6DF;
+  --sand:#8A8698;--foam:#E8EEF8;--shallow:#7FA3C4;--bird:#C3CDE6;
+  --head-ink:#E8ECF6;--bar-sub:#AEB9D2;--bar-line:rgba(255,255,255,.12)
+}
+/* 早晨 */
+.bottle-page.t-morning{
+  --sky-base:#FBEEE6;--sky-a:#F3B9A4;--sky-b:#A9C6DE;--sky-c:#F7D9B8;
+  --sun-glow:#F8D9B0;--sun-core:#FFF0D2;--sun-halo:#FFE3BE;
+  --sea-a:#B2DCD6;--sea-b:#A3CEDC;--sea-c:#92BCCF;
+  --beam:#FFEAC0;--spark:#FFF6DE;--horizon:#B7C6D6;--wave:#A6C2D4;
+  --sand:#F7E4C6;--foam:#FFFFFF;--shallow:#A9DEE0;--bird:#7C8AA0;
+  --head-ink:#5A4A3C;--bar-sub:#B29A80;--bar-line:rgba(92,83,70,.08)
+}
+/* 上午（默认） */
+/* 中午 */
+.bottle-page.t-noon{
+  --sky-base:#FBF3E4;--sky-a:#F0A98F;--sky-b:#8FB6D8;--sky-c:#EFCFA8;
+  --sun-glow:#FBDDA6;--sun-core:#FFF4D8;--sun-halo:#FFEBC2;
+  --sea-a:#9ED2CE;--sea-b:#8CC6C6;--sea-c:#77AABF;
+  --beam:#FFEDC0;--spark:#FFF7DE;--horizon:#A9C0CE;--wave:#8FB3C8;
+  --sand:#F6E2C0;--foam:#FFFFFF;--shallow:#9ED8DC;--bird:#7A879B;
+  --head-ink:#4C4438;--bar-sub:#A48E72;--bar-line:rgba(92,83,70,.08)
+}
+/* 下午 */
+.bottle-page.t-pm{
+  --sky-base:#FAEDDD;--sky-a:#EEA083;--sky-b:#9DB4C9;--sky-c:#EFC79A;
+  --sun-glow:#F6C88A;--sun-core:#FFE8BF;--sun-halo:#FFD79C;
+  --sea-a:#9BC7BE;--sea-b:#8EB8B8;--sea-c:#7C9FAE;
+  --beam:#FFDFA2;--spark:#FFEFCB;--horizon:#BAA98E;--wave:#93A9A8;
+  --sand:#EFD6AE;--foam:#FFFDF5;--shallow:#9CCFC8;--bird:#74808F;
+  --head-ink:#53463A;--bar-sub:#A89177;--bar-line:rgba(92,83,70,.08)
+}
+/* 傍晚 */
+.bottle-page.t-dusk{
+  --sky-base:#F6E0D8;--sky-a:#E8897A;--sky-b:#8E7FA8;--sky-c:#F3B27E;
+  --sun-glow:#F7B27A;--sun-core:#FFE1A8;--sun-halo:#FFB98A;
+  --sea-a:#D9A79B;--sea-b:#B48C97;--sea-c:#8E7286;
+  --beam:#FFCFA0;--spark:#FFE8C8;--horizon:#C08E86;--wave:#B4868C;
+  --sand:#E8C9A8;--foam:#FFF3E8;--shallow:#C9A6A8;--bird:#6E5A6A;
+  --head-ink:#4E3E3A;--bar-sub:#A8857A;--bar-line:rgba(92,83,70,.08)
+}
+/* 晚上 */
+.bottle-page.t-night{
+  --sky-base:#232B41;--sky-a:#3E4C74;--sky-b:#2F3A5A;--sky-c:#4A4A72;
+  --sun-glow:#B9C6E2;--sun-core:#E9EDF8;--sun-halo:#93A6C8;
+  --sea-a:#42597A;--sea-b:#374C69;--sea-c:#2A3A50;
+  --beam:#8FA8CC;--spark:#DCE6FF;--horizon:#7C90B2;--wave:#9CB0CD;
+  --sand:#6E6E86;--foam:#D9E4F4;--shallow:#5E7FA0;--bird:#AEBBD6;
+  --head-ink:#E4EAF4;--bar-sub:#AAB6CE;--bar-line:rgba(255,255,255,.12)
+}
+.stars{opacity:0;transition:opacity .6s}
+.t-dawn .stars{opacity:.6}
+.t-dusk .stars{opacity:.42}
+.t-night .stars{opacity:.92}
+.bottle-head{flex:0 0 auto;height:48px;display:flex;align-items:center;padding:0 10px;background:var(--sky-base);transition:background .6s}
+.bottle-back{width:36px;height:36px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;color:var(--head-ink)}
+.bottle-back svg{width:22px;height:22px}
+.bottle-title{flex:1;text-align:center;font-size:17px;font-weight:600;color:var(--head-ink);letter-spacing:.6px;margin-right:36px;transition:color .6s}
+.bottle-scene{flex:1;position:relative;overflow:hidden}
+.bottle-art{position:absolute;inset:0;width:100%;height:100%;display:block}
+.bottle-bar{flex:0 0 auto;background:var(--sky-base);padding:8px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--bar-line);transition:background .6s,border-color .6s}
+.bottle-bar-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.bottle-styles{display:flex;gap:6px}
+.bs-btn{width:40px;height:34px;padding:0;border-radius:10px;border:1px solid transparent;background:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center}
+.bs-btn svg{width:20px;height:30px;display:block}
+.bs-btn.active{background:#fff;border-color:rgba(200,126,102,.55);box-shadow:0 3px 10px rgba(200,126,102,.18)}
+.bottle-shelf{display:flex;align-items:center;gap:5px}
+.bs-label{font-size:11.5px;color:var(--bar-sub);margin-right:2px}
+.shelf-dot{width:11px;height:11px;border-radius:50%;background:rgba(180,160,135,.18);border:1px solid rgba(180,160,135,.3);display:block;transition:background .2s,border-color .2s}
+.shelf-dot.on{background:#EBA893;border-color:#C98C7A}
+.bottle-bar-actions{display:flex;gap:10px}
+.sand-shell{transition:opacity .3s;cursor:pointer}
+.sand-shell.taken{opacity:0;pointer-events:none}
+#bottleSplash{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
+#bottleSplash.play{animation:splashRise .8s ease-out}
+@keyframes splashRise{0%{opacity:0;transform:scale(.5) translateY(10px)}18%{opacity:1}100%{opacity:0;transform:scale(1.28) translateY(-6px)}}
+#mainBottle{transform-origin:0 0;transition:opacity .7s}
+#mainBottleArt{transform-origin:0 0;transition:transform .45s cubic-bezier(.3,.9,.4,1)}
+#mainBottle.toss{animation:mainToss .95s cubic-bezier(.2,.55,.35,1) forwards}
+@keyframes mainToss{0%{transform:translate(0,0) scale(1)}28%{transform:translate(16px,-168px) scale(.9)}52%{transform:translate(28px,-136px) scale(.82)}60%{transform:translate(28px,-146px) scale(.82)}100%{transform:translate(28px,-136px) scale(.82)}}
+#mainBottle.fade{opacity:0;pointer-events:none}
+#mainRing{transition:opacity .4s}
+#mainRing.hide{opacity:0}
+#seaRing{opacity:0;transition:opacity .5s}
+#seaRing.on{opacity:.55}
+#mainBottle.lift{animation:mainLift .66s ease-out}
+@keyframes mainLift{0%{transform:translateY(0)}45%{transform:translateY(-34px)}100%{transform:translateY(0)}}
+#mainBottleDrops{opacity:0}
+#mainBottleDrops.play{animation:wetFade 1s ease-out}
+@keyframes wetFade{0%{opacity:0}18%{opacity:1}70%{opacity:1}100%{opacity:0}}
+#mainBottleDrops.play circle{animation:dropSlide 1s ease-in}
+@keyframes dropSlide{0%{transform:translateY(-10px)}55%{transform:translateY(4px)}100%{transform:translateY(18px)}}
+.bottle-btn{flex:1;height:44px;border:0;border-radius:22px;font-size:14.5px;font-weight:600;color:#fff;background:#E9A187;box-shadow:0 8px 18px rgba(206,126,102,.26)}
+.bottle-btn:active{transform:scale(.98)}
+.bottle-btn.ghost{background:rgba(255,255,255,.78);color:#8A6A52;box-shadow:none;border:1px solid rgba(138,106,82,.22)}
+.bottle-tap{cursor:pointer}
+.bottle-main{cursor:pointer}
+.bs-note{height:24px;padding:0 10px;margin-left:2px;border-radius:12px;border:1px solid rgba(138,106,82,.26);background:rgba(255,255,255,.62);font-size:11.5px;color:#8A6A52;letter-spacing:.2px;white-space:nowrap}
+.bs-note:active{background:#fff}
+.note-edit{padding:16px 18px 26px}
+.note-textarea{width:100%;min-height:136px;padding:12px 13px;font-size:15px;line-height:1.6;resize:none;border-radius:10px;background:#FBF7EE;border:1px solid rgba(150,130,105,.18);color:#4E4638}
+.note-tip{margin-top:10px;font-size:12.5px;color:#A48E72;letter-spacing:.2px}
+.bob{animation:bobFloat 4.6s ease-in-out infinite}
+@keyframes bobFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+.bottle-letter{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 24px 32px;background:rgba(247,241,231,.92);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.bottle-letter.hidden{display:none}
+.bl-paper{width:84%;padding:24px 22px 18px;border-radius:8px;background:repeating-linear-gradient(180deg,rgba(150,130,105,.10) 0 1px,transparent 1px 30px),#FBF6EA;box-shadow:0 14px 34px rgba(120,98,74,.2);transform:rotate(-1.4deg)}
+.bl-head{font-size:12px;letter-spacing:3px;color:#A48E72;margin-bottom:14px}
+.bl-text{font-size:16px;line-height:30px;color:#4E4638;white-space:pre-wrap;min-height:96px}
+.bl-sign{margin-top:14px;text-align:right;font-family:"Segoe Script","Snell Roundhand",cursive;font-size:15px;color:#B0805C}
+.bl-close{height:40px;padding:0 26px;border:0;border-radius:20px;background:#8FA6BE;color:#fff;font-size:14px;box-shadow:0 8px 18px rgba(110,138,166,.28)}

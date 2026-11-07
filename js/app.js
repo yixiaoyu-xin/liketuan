@@ -303,6 +303,7 @@
   }
   function clockLoop() {
     renderClock();
+    applyBottleTheme();
     setTimeout(clockLoop, 1000 - (Date.now() % 1000));
   }
 
@@ -353,6 +354,144 @@
     var el = document.getElementById(id);
     el.classList.remove('open');
     el.setAttribute('aria-hidden', 'true');
+  }
+
+  /* ---------------- 漂流瓶 ---------------- */
+  var BOTTLE_NOTES = [
+    { t: '今天海面很安静，我把没说出口的话装进瓶子。', s: '匿名的旅人' },
+    { t: '如果你捡到它，替我看一眼今天的晚霞吧。', s: '海边的人' },
+    { t: '有些话不适合说出口，只好交给海。', s: '某个陌生人' },
+    { t: '愿你被这世界温柔以待，哪怕只有一点点。', s: '匿名的旅人' },
+    { t: '瓶子漂了很久，希望你比我勇敢。', s: '海边的人' },
+    { t: '今天路过一家面包店，想起一个很久没联系的人。', s: '某个陌生人' },
+    { t: '如果生活有点累，就来海边坐一会儿。', s: '匿名的旅人' },
+    { t: '我把好天气分你一半，剩下的留给明天。', s: '海边的人' }
+  ];
+  var BOTTLE_STYLES = {
+    round: '<g><rect x="-7" y="-98" width="14" height="11" rx="3.4" fill="#D9AE79" stroke="#B08E63" stroke-width="1"/>'
+      + '<path d="M-6,-88 h12 v8 h-12 z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-width=".9"/>'
+      + '<path d="M-6,-80 C-16,-74 -22,-62 -22,-46 C-22,-24 -14,-2 -6,0 h12 C14,-2 22,-24 22,-46 C22,-62 16,-74 6,-80 Z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-width="1"/>'
+      + '<rect x="-10" y="-44" width="20" height="14" rx="1.6" fill="#FBF4E4" stroke="#CBB69A" stroke-width=".8" transform="rotate(-6)"/>'
+      + '<path d="M-14,-62 C-19,-48 -17,-26 -11,-8" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.6" fill="none"/>'
+      + '<g class="bottle-contents"></g></g>',
+    slim: '<g><rect x="-6" y="-112" width="12" height="10" rx="3" fill="#D9AE79" stroke="#B08E63" stroke-width="1"/>'
+      + '<path d="M-5,-102 h10 v6 h-10 z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-width=".9"/>'
+      + '<path d="M-5,-96 C-6,-88 -8,-78 -9,-68 C-11,-52 -14,-26 -13,-4 h26 C14,-26 11,-52 9,-68 C8,-78 6,-88 5,-96 Z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-width="1"/>'
+      + '<rect x="-9.5" y="-46" width="19" height="12" rx="1.4" fill="#FBF4E4" stroke="#CBB69A" stroke-width=".8" transform="rotate(5)"/>'
+      + '<path d="M-9,-78 C-12,-60 -13,-34 -11,-10" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.4" fill="none"/>'
+      + '<g class="bottle-contents"></g></g>',
+    jar: '<g><rect x="-11" y="-92" width="22" height="12" rx="3.5" fill="#D9AE79" stroke="#B08E63" stroke-width="1"/>'
+      + '<path d="M-9,-80 C-19,-70 -26,-50 -26,-24 C-26,-8 -20,0 -12,2 h24 C20,0 26,-8 26,-24 C26,-50 19,-70 9,-80 Z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-width="1"/>'
+      + '<rect x="-12" y="-50" width="24" height="14" rx="1.6" fill="#FBF4E4" stroke="#CBB69A" stroke-width=".8" transform="rotate(-4)"/>'
+      + '<path d="M-18,-58 C-23,-44 -21,-20 -15,-6" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1.6" fill="none"/>'
+      + '<g class="bottle-contents"></g></g>'
+  };
+  var BOTTLE_SHELL_ART = [
+    '<path d="M0,-6 l2,4 4,0 -3,3 1,4 -4,-2 -4,2 1,-4 -3,-3 4,0 Z" fill="#EBA893" stroke="#C98C7A" stroke-width=".6"/>',
+    '<path d="M-6,4 C-6,-4 -3,-7 0,-7 C3,-7 6,-4 6,4 Z" fill="#F0D3C2" stroke="#C8A08D" stroke-width=".6"/>',
+    '<path d="M-5,4 C-5,-3 -2,-6 1,-6 C5,-6 6,-3 6,4 Z" fill="#E3CBA8" stroke="#BFA47E" stroke-width=".6"/>',
+    '<path d="M-5,4 C-5,-3 -2,-6 1,-6 C4,-6 5,-3 5,4 Z" fill="#EFE0CB" stroke="#CBB79C" stroke-width=".6"/>'
+  ];
+  var BOTTLE_SLOTS = [[-8, -10], [7, -16], [0, -25], [-9, -30]];
+  var BOTTLE_SEA = { x: 196, y: 470 };
+  var dropTimers = [];
+  var BOTTLE_NOTE_KEY = 'bottleNotes.v1';
+  var bottleState = { style: 'round', collected: [], horizontal: false, notes: loadBottleNotes() };
+
+  function loadBottleNotes() {
+    try {
+      var a = JSON.parse(localStorage.getItem(BOTTLE_NOTE_KEY) || '[]');
+      return Array.isArray(a) ? a.filter(function (x) { return typeof x === 'string' && x; }).slice(0, 8) : [];
+    } catch (e) { return []; }
+  }
+
+  function renderBottleArt() {
+    var el = $('#mainBottleArt');
+    if (!el) return;
+    el.innerHTML = BOTTLE_STYLES[bottleState.style];
+    var c = el.querySelector('.bottle-contents');
+    if (!c) return;
+    for (var k = 0; k < bottleState.collected.length && k < BOTTLE_SLOTS.length; k++) {
+      var p = BOTTLE_SLOTS[k];
+      c.insertAdjacentHTML('beforeend',
+        '<g transform="translate(' + p[0] + ',' + p[1] + ') scale(.62) rotate(' + (k * 22 - 20) + ')">' +
+        BOTTLE_SHELL_ART[bottleState.collected[k]] + '</g>');
+    }
+    for (var n = 0; n < bottleState.notes.length && n < 3; n++) {
+      c.insertAdjacentHTML('beforeend',
+        '<g transform="translate(' + (-2 + n * 2.5) + ',' + (-13 - n * 3) + ') rotate(' + (n * 8 - 10) + ')">' +
+        '<rect x="-6" y="-4.6" width="12" height="9" rx="1.1" fill="#FFFDF3" stroke="#D8C9A6" stroke-width=".7"/>' +
+        '<path d="M-4,-2.2 h8 M-4,0 h8 M-4,2.2 h5.4" stroke="#C0AE8C" stroke-width=".5" fill="none"/>' +
+        '</g>');
+    }
+  }
+  function applyBottleState() {
+    var art = $('#mainBottleArt');
+    if (!art) return;
+    art.style.transform = bottleState.horizontal ? 'translate(-42px,6px) rotate(84deg)' : 'rotate(7deg)';
+  }
+  function playSplash() {
+    var s = $('#bottleSplash');
+    if (!s) return;
+    s.classList.remove('play');
+    setTimeout(function () { s.classList.add('play'); }, 30);
+    setTimeout(function () { s.classList.remove('play'); }, 860);
+  }
+  function bottlePhase() {
+    var h = new Date().getHours();
+    if (h < 5) return 'dawn';
+    if (h < 9) return 'morning';
+    if (h < 12) return 'am';
+    if (h < 14) return 'noon';
+    if (h < 18) return 'pm';
+    if (h < 20) return 'dusk';
+    return 'night';
+  }
+  var BOTTLE_THEME_CLASSES = ['t-dawn', 't-morning', 't-am', 't-noon', 't-pm', 't-dusk', 't-night'];
+  function applyBottleTheme() {
+    var el = $('#pageBottle');
+    if (!el) return;
+    var cls = 't-' + bottlePhase();
+    if (el.classList.contains(cls)) return;
+    for (var i = 0; i < BOTTLE_THEME_CLASSES.length; i++) el.classList.remove(BOTTLE_THEME_CLASSES[i]);
+    el.classList.add(cls);
+  }
+  function openBottle() {
+    renderBottleArt();
+    applyBottleState();
+    applyBottleTheme();
+    openScreen('pageBottle');
+  }
+  function showBottleLetter(i) {
+    var n = BOTTLE_NOTES[(Number(i) || 0) % BOTTLE_NOTES.length];
+    $('#bottleLetterText').textContent = n.t;
+    $('#bottleLetterSign').textContent = '— ' + n.s;
+    var box = $('#bottleLetter');
+    box.classList.remove('hidden');
+    box.setAttribute('aria-hidden', 'false');
+  }
+  function closeBottleLetter() {
+    var box = $('#bottleLetter');
+    box.classList.add('hidden');
+    box.setAttribute('aria-hidden', 'true');
+  }
+  function openBottleNote() {
+    var t = $('#noteText');
+    if (!t) return;
+    t.value = '';
+    openSheet('sheetNote');
+    setTimeout(function () { try { t.focus(); } catch (e) {} }, 260);
+  }
+  function saveBottleNote() {
+    var t = $('#noteText');
+    var v = t && typeof t.value === 'string' ? t.value.replace(/\s+/g, ' ').trim() : '';
+    if (!v) { toast('先写点什么吧'); return; }
+    bottleState.notes.unshift(v.slice(0, 200));
+    bottleState.notes = bottleState.notes.slice(0, 8);
+    try { localStorage.setItem(BOTTLE_NOTE_KEY, JSON.stringify(bottleState.notes)); } catch (e) {}
+    renderBottleArt();
+    closeSheets();
+    toast('纸条已塞进瓶子');
   }
 
   function openSheet(id) {
@@ -1905,8 +2044,88 @@
       var row = e.target.closest('.wx-row');
       if (!row) return;
       if (row.dataset.route === 'moments') openMoments();
+      else if (row.dataset.route === 'bottle') openBottle();
       else toast((row.dataset.todo || '该功能') + '待开发');
     });
+
+    /* 漂流瓶 */
+    renderBottleArt();
+    applyBottleState();
+    $('#bottleBack').addEventListener('click', function () { closeScreen('pageBottle'); });
+    $('#pageBottle').addEventListener('click', function (e) {
+      var b = e.target.closest('.bottle-tap');
+      if (b) { showBottleLetter(b.getAttribute('data-note')); return; }
+      if (e.target.closest('.bottle-main')) { openBottleNote(); return; }
+      var sh = e.target.closest('.sand-shell');
+      if (sh && !sh.classList.contains('taken')) {
+        var idx = parseInt(sh.getAttribute('data-shell'), 10);
+        sh.classList.add('taken');
+        bottleState.collected.push(idx);
+        renderBottleArt();
+        var dot = $('#bottleShelf').querySelectorAll('.shelf-dot')[bottleState.collected.length - 1];
+        if (dot) dot.classList.add('on');
+        toast('捡起一枚贝壳，放进瓶子');
+      }
+    });
+    $$('#bottleStyles .bs-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        $$('#bottleStyles .bs-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        bottleState.style = btn.getAttribute('data-style');
+        renderBottleArt();
+      });
+    });
+    $('#bottleDrop').addEventListener('click', function () {
+      closeBottleLetter();
+      var b = $('#mainBottle');
+      var ring = $('#mainRing');
+      var sp = $('#mainSplash');
+      if (!b) return;
+      dropTimers.forEach(function (t) { clearTimeout(t); });
+      dropTimers = [];
+      b.classList.remove('toss', 'fade');
+      $('#seaRing').classList.remove('on');
+      sp.setAttribute('transform', 'translate(' + BOTTLE_SEA.x + ',' + BOTTLE_SEA.y + ')');
+      bottleState.horizontal = false;
+      applyBottleState();
+      playSplash();
+      setTimeout(function () { b.classList.add('toss'); }, 30);
+      ring.classList.add('hide');
+      dropTimers.push(setTimeout(function () {
+        bottleState.horizontal = true;
+        applyBottleState();
+        $('#seaRing').classList.add('on');
+      }, 980));
+      dropTimers.push(setTimeout(function () {
+        b.classList.add('fade');
+        $('#seaRing').classList.remove('on');
+      }, 3980));
+      toast('瓶子已投入大海');
+    });
+    $('#bottlePick').addEventListener('click', function () {
+      var b = $('#mainBottle');
+      var d = $('#mainBottleDrops');
+      dropTimers.forEach(function (t) { clearTimeout(t); });
+      dropTimers = [];
+      b.classList.remove('toss', 'fade');
+      $('#seaRing').classList.remove('on');
+      $('#mainRing').classList.remove('hide');
+      $('#mainSplash').setAttribute('transform', 'translate(168,601)');
+      bottleState.horizontal = false;
+      applyBottleState();
+      d.classList.remove('play');
+      setTimeout(function () { d.classList.add('play'); }, 20);
+      setTimeout(function () { d.classList.remove('play'); }, 1100);
+      b.classList.remove('lift');
+      setTimeout(function () { b.classList.add('lift'); }, 20);
+      setTimeout(function () { b.classList.remove('lift'); }, 700);
+      setTimeout(function () {
+        showBottleLetter(Math.floor(Math.random() * BOTTLE_NOTES.length));
+      }, 420);
+    });
+    $('#bottleLetterClose').addEventListener('click', closeBottleLetter);
+    $('#bottleNoteBtn').addEventListener('click', openBottleNote);
+    $('#noteSave').addEventListener('click', saveBottleNote);
     $('#page-me').addEventListener('click', function (e) {
       var row = e.target.closest('.wx-row');
       if (row) {
@@ -2126,28 +2345,35 @@
         return '<button class="bm-btn' + d + '" data-bm="' + b.key + '">' + b.html + '<span>' + b.label + '</span></button>';
       }).join('');
 
-      // 定位：在气泡上方
-      var areaRect = $('#msgArea').getBoundingClientRect();
+      // 定位：整块浮在气泡正上方，空间不够才放到下方
+      var hostRect = menu.parentNode.getBoundingClientRect();
       var elRect = longPressEl.querySelector('.bubble').getBoundingClientRect();
-      var top = elRect.top - areaRect.top - 10;
-      var left = elRect.left - areaRect.left + elRect.width / 2;
-      if (top < 120) top = elRect.bottom - areaRect.top + 10; // 太靠上则放到下面
+      menu.classList.remove('hidden', 'below');
+      var mh = menu.offsetHeight;
+      var mw = menu.offsetWidth;
+      var cx = elRect.left - hostRect.left + elRect.width / 2;
+      var minX = mw / 2 + 8;
+      var maxX = hostRect.width - mw / 2 - 8;
+      if (cx < minX) cx = minX;
+      if (cx > maxX) cx = maxX;
+      var top = elRect.top - hostRect.top - 12;
+      if (top - mh < 8) {
+        menu.classList.add('below');
+        top = elRect.bottom - hostRect.top + 12;
+        if (top + mh > hostRect.height - 8) top = hostRect.height - mh - 8;
+      }
+      menu.style.left = cx + 'px';
       menu.style.top = top + 'px';
-      menu.style.left = left + 'px';
 
       mask.classList.remove('hidden');
-      menu.classList.remove('hidden');
       requestAnimationFrame(function () { menu.classList.add('show'); });
 
-      // 选中/高亮气泡
-      longPressEl.classList.add('menu-highlight');
     }
 
     function closeBubbleMenu() {
       $('#bubbleMenuMask').classList.add('hidden');
       $('#bubbleMenu').classList.remove('show');
       $('#bubbleMenu').classList.add('hidden');
-      if (longPressEl) longPressEl.classList.remove('menu-highlight');
       longPressEl = null;
       longPressMsg = null;
     }
@@ -2208,13 +2434,8 @@
     }
     var BUBBLE_MENU_HTML = [
       { key: 'reply', label: '回复', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14.4l-4-4 4-4"/><path d="M5 10.4h10.4a4 4 0 0 1 4 4v3.2"/></svg></span>' },
-      { key: 'quote', label: '引用', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 7h4v4H7zM13 7h4v4h-4zM7 13h4v4H7zM13 13h4v4h-4z"/></svg></span>' },
-      { key: 'copy', label: '复制', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>' },
       { key: 'collect', label: '收藏', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.6l7 4v8.8l-7 4-7-4V7.6z"/></svg></span>' },
-      { key: 'translate', label: '翻译', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 5h7M8 3v2c0 4-2 6-5 6M11 3c-2 3-3 5-3 6 0 1 1 2 3 2M13 8h7M16 7v2"/></svg></span>' },
-      { key: 'recall', label: '撤回', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 4v8M6 8l6-4 6 4"/></svg></span>' },
-      { key: 'delete', label: '删除', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></span>' },
-      { key: 'multi', label: '多选', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="5" y="5" width="6" height="6" rx="1.2"/><rect x="13" y="5" width="6" height="6" rx="1.2"/><rect x="5" y="13" width="6" height="6" rx="1.2"/><rect x="13" y="13" width="6" height="6" rx="1.2"/></svg></span>' }
+      { key: 'recall', label: '撤回', html: '<span class="bm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 4v8M6 8l6-4 6 4"/></svg></span>' }
     ];
 
     /* 语音 */
