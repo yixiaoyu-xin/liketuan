@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EDEDED">
 <title>聊天</title>
-<link rel="stylesheet" href="css/style.css?v=20261107q">
+<link rel="stylesheet" href="css/style.css?v=20261107ze">
 </head>
 <body>
 <div class="phone" id="phone">
@@ -23,31 +23,8 @@
       <div class="header-actions" id="headerActions">
         <button class="icon-btn fuzz" id="btnFuzz" aria-label="小团子">
           <svg viewBox="0 0 34 34" aria-hidden="true">
-            <defs>
-              <filter id="fuzzEdge" x="-30%" y="-30%" width="160%" height="160%">
-                <feTurbulence type="fractalNoise" baseFrequency=".11" numOctaves="2" seed="9" result="n"/>
-                <feDisplacementMap in="SourceGraphic" in2="n" scale="2.8" xChannelSelector="R" yChannelSelector="G"/>
-              </filter>
-              <radialGradient id="fuzzFill" cx=".36" cy=".28" r=".82">
-                <stop offset="0" stop-color="#FFFDF8"/>
-                <stop offset=".68" stop-color="#F8EEDF"/>
-                <stop offset="1" stop-color="#EFE1CD"/>
-              </radialGradient>
-            </defs>
-            <g filter="url(#fuzzEdge)" fill="url(#fuzzFill)">
-              <circle cx="28.3" cy="18.4" r="3.2"/>
-              <circle cx="26.2" cy="25.1" r="3.1"/>
-              <circle cx="20.7" cy="29.2" r="3.2"/>
-              <circle cx="13.3" cy="29.2" r="3.1"/>
-              <circle cx="7.8" cy="25.1" r="3.2"/>
-              <circle cx="5.7" cy="18.4" r="3.1"/>
-              <circle cx="7.8" cy="11.7" r="3.2"/>
-              <circle cx="13.3" cy="7.6" r="3.1"/>
-              <circle cx="20.7" cy="7.6" r="3.2"/>
-              <circle cx="26.2" cy="11.7" r="3.1"/>
-              <circle cx="17" cy="18.4" r="11.6"/>
-            </g>
-            <g id="fuzzFace"></g>
+            <g id="fuzzBody"></g>
+            <g id="fuzzFace" class="fuzz-face"></g>
           </svg>
         </button>
         <button class="icon-btn" id="btnPlus" aria-label="更多">
@@ -499,20 +476,8 @@
         </button>
         <button class="icon-btn fuzz chat-fuzz" id="btnFuzz2" aria-label="小团子">
           <svg viewBox="0 0 34 34" aria-hidden="true">
-            <g filter="url(#fuzzEdge)" fill="url(#fuzzFill)">
-              <circle cx="28.3" cy="18.4" r="3.2"/>
-              <circle cx="26.2" cy="25.1" r="3.1"/>
-              <circle cx="20.7" cy="29.2" r="3.2"/>
-              <circle cx="13.3" cy="29.2" r="3.1"/>
-              <circle cx="7.8" cy="25.1" r="3.2"/>
-              <circle cx="5.7" cy="18.4" r="3.1"/>
-              <circle cx="7.8" cy="11.7" r="3.2"/>
-              <circle cx="13.3" cy="7.6" r="3.1"/>
-              <circle cx="20.7" cy="7.6" r="3.2"/>
-              <circle cx="26.2" cy="11.7" r="3.1"/>
-              <circle cx="17" cy="18.4" r="11.6"/>
-            </g>
-            <g id="fuzzFace2"></g>
+            <g id="fuzzBody2"></g>
+            <g id="fuzzFace2" class="fuzz-face"></g>
           </svg>
         </button>
       </div>
@@ -748,73 +713,59 @@
 
           <path d="M-20,250 C90,244 170,254 250,248 C320,243 370,252 410,246" stroke="var(--horizon)" stroke-width="1" opacity=".45" fill="none"/>
 
-          <g stroke="var(--wave)" stroke-width="1" fill="none" opacity=".32">
-            <path d="M56,432 q12,-6 24,0 q12,6 24,0"/>
-            <path d="M244,492 q14,-6 28,0 q14,6 28,0"/>
-            <path d="M120,566 q12,-5 24,0"/>
-            <path d="M296,584 q12,-5 24,0"/>
+          <!-- 水面：流动水线 + 波纹，随风向缓慢倾斜 -->
+          <g class="sea-lines">
+            <g id="seaFlow" fill="none" stroke="var(--wave)" opacity=".2">
+              <path d="M-390,306 C-260,300 -130,312 0,306 C130,300 260,312 390,306 C520,300 650,312 780,306"/>
+              <path d="M-390,366 C-260,372 -130,360 0,366 C130,372 260,360 390,366 C520,372 650,360 780,366"/>
+              <path d="M-390,444 C-260,438 -130,450 0,444 C130,438 260,450 390,444 C520,438 650,450 780,444"/>
+              <path d="M-390,506 C-260,512 -130,500 0,506 C130,512 260,500 390,506 C520,512 650,500 780,506"/>
+            </g>
+            <g stroke="var(--wave)" stroke-width="1" fill="none" opacity=".32">
+              <path d="M56,424 q12,-6 24,0 q12,6 24,0"/>
+              <path d="M244,484 q14,-6 28,0 q14,6 28,0"/>
+              <path d="M120,500 q12,-5 24,0"/>
+              <path d="M296,458 q12,-5 24,0"/>
+            </g>
           </g>
 
-          <!-- 沙滩 -->
-          <path d="M-20,602 C70,592 130,610 210,602 C290,594 350,608 410,600 L410,720 L-20,720 Z" fill="var(--sand)" filter="url(#bWc)"/>
-          <path d="M-20,601 C80,591 140,608 220,600 C300,592 356,606 410,598" stroke="var(--foam)" stroke-width="2.4" opacity=".8" fill="none"/>
+          <!-- 沙滩（更大） -->
+          <path d="M-20,566 C70,556 130,574 210,566 C290,558 350,572 410,564 L410,720 L-20,720 Z" fill="var(--sand)" filter="url(#bWc)"/>
+          <path d="M-20,565 C80,555 140,572 220,564 C300,556 356,570 410,562" stroke="var(--foam)" stroke-width="2.4" opacity=".8" fill="none"/>
+
+          <!-- 浪花拍到沙滩 -->
+          <g class="breakers" fill="none" stroke="var(--foam)" stroke-linecap="round">
+            <path d="M48,563 C60,552 78,547 96,554" stroke-width="1.8"/>
+            <path d="M146,561 C158,549 176,544 194,551" stroke-width="1.5"/>
+            <path d="M258,562 C272,550 290,545 308,552" stroke-width="1.8"/>
+            <path d="M338,561 C348,551 362,547 376,553" stroke-width="1.4"/>
+          </g>
 
           <!-- 沙滩贝壳（可拾取进瓶） -->
-          <g class="sand-shell" data-shell="0" transform="translate(74,626) rotate(-10)">
+          <g class="sand-shell" data-shell="0" transform="translate(64,600) rotate(-10)">
             <ellipse cx="0" cy="5" rx="13" ry="3.4" fill="#C9A97F" opacity=".25"/>
             <path d="M0,-11 l3,6 7,0 -5,4 2,7 -7,-4 -7,4 2,-7 -5,-4 7,0 Z" fill="#EBA893" stroke="#C98C7A" stroke-width=".9"/>
           </g>
-          <g class="sand-shell" data-shell="1" transform="translate(150,632) rotate(6)">
+          <g class="sand-shell" data-shell="1" transform="translate(146,608) rotate(6)">
             <ellipse cx="0" cy="5" rx="14" ry="3.4" fill="#C9A97F" opacity=".25"/>
             <path d="M-12,5 C-12,-6 -6,-12 0,-12 C6,-12 12,-6 12,5 Z" fill="#F0D3C2" stroke="#C8A08D" stroke-width=".9"/>
             <path d="M0,-11 V5 M-5,-9 L-4,4 M5,-9 L4,4" stroke="#C8A08D" stroke-width=".8" opacity=".75"/>
           </g>
-          <g class="sand-shell" data-shell="2" transform="translate(238,628) rotate(-4)">
+          <g class="sand-shell" data-shell="2" transform="translate(238,604) rotate(-4)">
             <ellipse cx="0" cy="5" rx="12" ry="3.2" fill="#C9A97F" opacity=".25"/>
             <path d="M-9,4 C-9,-3 -4,-8 1,-8 C6,-8 9,-3 9,4 Z" fill="#E3CBA8" stroke="#BFA47E" stroke-width=".9"/>
             <path d="M-4,-6 C-2,-2 2,2 5,3" stroke="#BFA47E" stroke-width=".8" fill="none"/>
           </g>
-          <g class="sand-shell" data-shell="3" transform="translate(312,634) rotate(10)">
+          <g class="sand-shell" data-shell="3" transform="translate(316,612) rotate(10)">
             <ellipse cx="0" cy="5" rx="11" ry="3" fill="#C9A97F" opacity=".25"/>
             <path d="M-9,3 C-9,-4 -4,-9 1,-9 C6,-9 10,-4 10,3 Z" fill="#EFE0CB" stroke="#CBB79C" stroke-width=".9"/>
           </g>
 
-          <!-- 海面上漂散的三只瓶子（远近不同，圈随瓶底） -->
-          <g class="bottle-tap state-float" data-note="0" transform="translate(74,500) rotate(68) scale(.86)">
-            <g class="bob">
-              <path d="M-12,-20 C-15,-8 -15,16 -11,26 C-4,30 4,30 11,26 C15,16 15,-8 12,-20 Z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-opacity=".5" stroke-width="1"/>
-              <rect x="-6" y="-31" width="12" height="11" rx="3.5" fill="#D9AE79" stroke="#B08E63" stroke-opacity=".5" stroke-width="1"/>
-              <rect x="-6.6" y="-22" width="13.2" height="3" fill="#F1E6D3" opacity=".92"/>
-              <rect x="-8" y="1" width="16" height="11" rx="1.5" fill="#FBF4E4" stroke="#CBB69A" stroke-opacity=".55" stroke-width=".8" transform="rotate(-7)"/>
-              <path d="M-9,-6 C-11,6 -9,16 -5,21" stroke="#FFFFFF" stroke-opacity=".65" stroke-width="1.4" fill="none"/>
-            </g>
-          </g>
-          <ellipse cx="74" cy="508" rx="27" ry="4.4" fill="none" stroke="var(--foam)" stroke-width="1" opacity=".5"/>
-
-          <g class="bottle-tap state-stand" data-note="1" transform="translate(306,428) rotate(-12) scale(.68)">
-            <g class="bob" style="animation-delay:-1.5s">
-              <path d="M-12,-20 C-15,-8 -15,16 -11,26 C-4,30 4,30 11,26 C15,16 15,-8 12,-20 Z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-opacity=".5" stroke-width="1"/>
-              <rect x="-6" y="-31" width="12" height="11" rx="3.5" fill="#D9AE79" stroke="#B08E63" stroke-opacity=".5" stroke-width="1"/>
-              <rect x="-6.6" y="-22" width="13.2" height="3" fill="#F1E6D3" opacity=".92"/>
-              <rect x="-8" y="1" width="16" height="11" rx="1.5" fill="#FBF4E4" stroke="#CBB69A" stroke-opacity=".55" stroke-width=".8" transform="rotate(-7)"/>
-              <path d="M-9,-6 C-11,6 -9,16 -5,21" stroke="#FFFFFF" stroke-opacity=".65" stroke-width="1.4" fill="none"/>
-            </g>
-          </g>
-          <ellipse cx="306" cy="445" rx="20" ry="3.4" fill="none" stroke="var(--foam)" stroke-width=".9" opacity=".45"/>
-
-          <g class="bottle-tap state-sink" data-note="2" transform="translate(292,548) rotate(14) scale(.92)">
-            <g class="bob" style="animation-delay:-2.8s">
-              <path d="M-12,-20 C-15,-8 -15,16 -11,26 C-4,30 4,30 11,26 C15,16 15,-8 12,-20 Z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-opacity=".5" stroke-width="1"/>
-              <rect x="-6" y="-31" width="12" height="11" rx="3.5" fill="#D9AE79" stroke="#B08E63" stroke-opacity=".5" stroke-width="1"/>
-              <rect x="-6.6" y="-22" width="13.2" height="3" fill="#F1E6D3" opacity=".92"/>
-              <rect x="-8" y="1" width="16" height="11" rx="1.5" fill="#FBF4E4" stroke="#CBB69A" stroke-opacity=".55" stroke-width=".8" transform="rotate(-7)"/>
-              <path d="M-9,-6 C-11,6 -9,16 -5,21" stroke="#FFFFFF" stroke-opacity=".65" stroke-width="1.4" fill="none"/>
-            </g>
-          </g>
-          <ellipse cx="292" cy="571" rx="25" ry="4.2" fill="none" stroke="var(--foam)" stroke-width="1" opacity=".5"/>
+          <!-- 海面上的漂流瓶（代码生成，随风慢慢漂） -->
+          <g id="driftBottles"></g>
 
           <!-- 水花：与白浪线齐平，落在瓶子下方 -->
-          <g id="mainSplash" transform="translate(168,601)">
+          <g id="mainSplash" transform="translate(195,566)">
             <ellipse id="seaRing" cx="0" cy="0" rx="30" ry="6" fill="none" stroke="var(--foam)" stroke-width="1.1"/>
             <g id="bottleSplash" class="splash">
               <ellipse cx="0" cy="0" rx="36" ry="9" fill="none" stroke="var(--foam)" stroke-width="2.6" opacity=".9"/>
@@ -829,13 +780,9 @@
             </g>
           </g>
 
-          <!-- 主瓶：可选款式 / 可换姿态 -->
-          <g transform="translate(168,606)">
-            <g id="mainRing">
-              <ellipse cx="0" cy="0" rx="34" ry="9" fill="none" stroke="var(--foam)" stroke-width="1.4" opacity=".55"/>
-              <ellipse cx="0" cy="0" rx="54" ry="15" fill="#5E93A8" opacity=".18" filter="url(#bSoft)"/>
-            </g>
-            <g id="mainBottle" class="bottle-main">
+          <!-- 主瓶：默认收起，点「扔一个瓶子」后在屏幕中央出现，长按选抛掷方向 -->
+          <g id="mainAnchor" transform="translate(195,352)">
+            <g id="mainBottle" class="bottle-main stowed">
               <g id="mainBottleArt"></g>
               <g id="mainBottleDrops" class="droplets">
                 <circle cx="-13" cy="0" r="2.6" fill="#CFE9F2"/>
@@ -846,25 +793,44 @@
             </g>
           </g>
 
-          <!-- 浅水层：盖住瓶底，呈现被水淹没的感觉 -->
-          <path d="M-20,594 C90,586 180,602 262,594 C330,588 380,598 410,592 L410,628 L-20,628 Z" fill="var(--shallow)" opacity=".24" filter="url(#bSoft)"/>
-          <g fill="none" stroke="var(--foam)" opacity=".48">
-            <ellipse cx="168" cy="601" rx="44" ry="7.5" stroke-width="1.2"/>
+          <!-- 浅水层：盖住水边，呈现被水淹没的感觉 -->
+          <path d="M-20,558 C90,550 180,566 262,558 C330,552 380,562 410,556 L410,592 L-20,592 Z" fill="var(--shallow)" opacity=".24" filter="url(#bSoft)"/>
+          <g fill="none" stroke="var(--foam)" opacity=".4">
+            <ellipse cx="195" cy="566" rx="60" ry="9" stroke-width="1.2"/>
           </g>
         </svg>
 
+        <div class="toss-pop hidden" id="tossPop" aria-hidden="true">
+          <div class="tp-title">把它抛到哪里？</div>
+          <button class="tp-btn" data-to="near">近处的浅滩</button>
+          <button class="tp-btn" data-to="mid">海中央</button>
+          <button class="tp-btn" data-to="far">远方的海平线</button>
+        </div>
+
         <div class="bottle-letter hidden" id="bottleLetter" aria-hidden="true">
           <div class="bl-paper">
-            <div class="bl-head">来自海上的信</div>
+            <div class="bl-head" id="bottleLetterHead">来自海上的信</div>
             <div class="bl-text" id="bottleLetterText"></div>
             <div class="bl-sign" id="bottleLetterSign">— 匿名的旅人</div>
           </div>
-          <button class="bl-close" id="bottleLetterClose">收好，让它继续漂</button>
+          <div class="bl-actions">
+            <button class="bl-btn keep" id="blKeep">收好瓶子</button>
+            <button class="bl-btn drift" id="blReturn">让瓶子继续漂</button>
+          </div>
         </div>
       </div>
 
-      <div class="bottle-bar">
-        <div class="bottle-bar-top">
+      <div class="note-box" id="noteBox">
+        <button class="note-fold" id="noteFold" aria-label="纸条盒子">»</button>
+        <div class="note-bar">
+          <div class="nb-title">纸条盒子</div>
+          <div class="nb-list" id="noteBoxList"></div>
+        </div>
+      </div>
+
+      <div class="bottle-dock" id="bottleDock">
+        <button class="bottle-fold" id="bottleFold" aria-label="收纳">«</button>
+        <div class="bottle-bar">
           <div class="bottle-styles" id="bottleStyles">
             <button class="bs-btn active" data-style="round" aria-label="圆肚瓶">
               <svg viewBox="0 0 26 40" fill="none"><path d="M10,10 h6 v7 c4,3 6,7 6,12 v6 c0,2.4 -2,4.4 -4.4,4.4 h-9 c-2.4,0 -4.4,-2 -4.4,-4.4 v-6 c0,-5 2,-9 6,-12 z" fill="#E2EEF2" stroke="#98B2C2" stroke-width="1.2"/><rect x="10" y="3" width="6" height="8" rx="2" fill="#D9AE79"/></svg>
@@ -876,19 +842,8 @@
               <svg viewBox="0 0 26 40" fill="none"><path d="M8,8 h10 v6 c4,3 6,8 6,13 v6 c0,2 -1.6,3.4 -3.6,3.4 h-11.8 c-2,0 -3.6,-1.4 -3.6,-3.4 v-6 c0,-5 2,-10 6,-13 z" fill="#E2EEF2" stroke="#98B2C2" stroke-width="1.2"/><rect x="7.4" y="2.4" width="11.2" height="6" rx="2.2" fill="#D9AE79"/></svg>
             </button>
           </div>
-          <div class="bottle-shelf" id="bottleShelf">
-            <span class="bs-label">瓶内</span>
-            <i class="shelf-dot" data-slot="0"></i>
-            <i class="shelf-dot" data-slot="1"></i>
-            <i class="shelf-dot" data-slot="2"></i>
-            <i class="shelf-dot" data-slot="3"></i>
-            <button class="bs-note" id="bottleNoteBtn">写纸条</button>
-          </div>
         </div>
-        <div class="bottle-bar-actions">
-          <button class="bottle-btn ghost" id="bottleDrop">扔一个瓶子</button>
-          <button class="bottle-btn" id="bottlePick">捞一个瓶子</button>
-        </div>
+      </div>
       </div>
     </div>
 
@@ -1236,6 +1191,6 @@
 
   </div>
 </div>
-<script src="js/app.js?v=20261107z6"></script>
+<script src="js/app.js?v=20261107zj"></script>
 </body>
 </html>

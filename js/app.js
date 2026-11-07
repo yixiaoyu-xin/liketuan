@@ -481,6 +481,42 @@
     { t: '如果生活有点累，就来海边坐一会儿。', s: '匿名的旅人' },
     { t: '我把好天气分你一半，剩下的留给明天。', s: '海边的人' }
   ];
+  // 署名取自通讯录，15% 概率匿名
+  function pickNoteSign() {
+    var names = DB.friends.map(function (f) { return f.name; }).filter(function (n) { return typeof n === 'string' && n.trim(); });
+    if (names.length && Math.random() < .85) return randomFrom(names);
+    return '匿名的旅人';
+  }
+  var driftNotes = {};
+  // 纸条内容由字卡库里的字卡拼成
+  function composeNoteText() {
+    var pool = getReplyPool();
+    var texts = [];
+    pool.forEach(function (c) {
+      var v = (c.content || '').replace(/\s+/g, ' ').trim().replace(/[，。！？、；：,\.!?]+$/, '');
+      if (v) texts.push(v);
+    });
+    if (!texts.length) {
+      return BOTTLE_NOTES[Math.floor(Math.random() * BOTTLE_NOTES.length)].t;
+    }
+    var count = Math.min(texts.length, 1 + Math.floor(Math.random() * 3));
+    var out = [];
+    for (var i = 0; i < count; i++) {
+      out.push(texts.splice(Math.floor(Math.random() * texts.length), 1)[0]);
+    }
+    return out.join('，');
+  }
+  // 拿上来的瓶子里装什么：纸条 / 空瓶 / 只有装饰品
+  function makeDriftContent() {
+    var r = Math.random();
+    if (r < .12) {
+      return { kind: 'empty', head: '空空的瓶子', text: '把瓶子拿起来晃了晃，里面空空的，只有一点海水在瓶底荡来荡去。', sign: '' };
+    }
+    if (r < .3) {
+      return { kind: 'deco', head: '只有一点装饰品', text: '瓶子里没有纸条，只有几枚小小的贝壳和一点细沙，安静地躺在瓶底。', sign: '' };
+    }
+    return { kind: 'note', head: '来自海上的信', text: composeNoteText(), sign: pickNoteSign() };
+  }
   var BOTTLE_STYLES = {
     round: '<g><rect x="-7" y="-98" width="14" height="11" rx="3.4" fill="#D9AE79" stroke="#B08E63" stroke-width="1"/>'
       + '<path d="M-6,-88 h12 v8 h-12 z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-width=".9"/>'
@@ -571,23 +607,112 @@
     el.classList.add(cls);
   }
   function openBottle() {
+    ensureSeaState();
+    startSeaClock();
+    renderDriftBottles();
+    renderNoteBox();
     renderBottleArt();
-    applyBottleState();
+    stowMain();
     applyBottleTheme();
+    startBottleWind();
     openScreen('pageBottle');
   }
-  function showBottleLetter(i) {
-    var n = BOTTLE_NOTES[(Number(i) || 0) % BOTTLE_NOTES.length];
-    $('#bottleLetterText').textContent = n.t;
-    $('#bottleLetterSign').textContent = '— ' + n.s;
+  var BOX_KEY = 'bottleBox.v1';
+  var bottleBox = (function () {
+    try { var v = JSON.parse(localStorage.getItem(BOX_KEY)); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  })();
+  function saveBottleBox() {
+    try { localStorage.setItem(BOX_KEY, JSON.stringify(bottleBox)); } catch (e) {}
+  }
+  function renderNoteBox() {
+    var list = $('#noteBoxList');
+    if (!list) return;
+    if (!bottleBox.length) {
+      list.innerHTML = '<div class="nb-empty">还没有收起来的纸条</div>';
+      return;
+    }
+    var html = '';
+    for (var i = bottleBox.length - 1; i >= 0; i--) {
+      var n = bottleBox[i];
+      html += '<button class="nb-item" data-box="' + i + '"><span class="nb-line">' + esc(n.t) + '</span><em>' + esc(n.s) + '</em></button>';
+    }
+    list.innerHTML = html;
+  }
+
+  var activeLetterBottle = null;
+  var activeLetterNote = null;
+  function paintLetter(n) {
+    var head = $('#bottleLetterHead');
+    if (head) head.textContent = n.head || '来自海上的信';
+    $('#bottleLetterText').textContent = n.text;
+    var signEl = $('#bottleLetterSign');
+    signEl.textContent = n.sign ? '— ' + n.sign : '';
+    signEl.style.display = n.sign ? '' : 'none';
+    var keep = $('#blKeep');
+    if (keep) keep.style.display = n.kind === 'note' ? '' : 'none';
+    var acts = $('.bl-actions');
+    if (acts) acts.style.display = activeLetterBottle ? '' : 'none';
     var box = $('#bottleLetter');
     box.classList.remove('hidden');
     box.setAttribute('aria-hidden', 'false');
+  }
+  function showBottleLetter(id, el) {
+    var n = driftNotes[id];
+    if (!n) return;
+    activeLetterNote = n.kind === 'note' ? { t: n.text, s: n.sign } : null;
+    activeLetterBottle = el || null;
+    if (el) el.classList.add('holding');
+    paintLetter(n);
+  }
+  function showBoxNote(i) {
+    var n = bottleBox[i];
+    if (!n) return;
+    activeLetterBottle = null;
+    activeLetterNote = null;
+    paintLetter({ text: n.t, sign: n.s });
   }
   function closeBottleLetter() {
     var box = $('#bottleLetter');
     box.classList.add('hidden');
     box.setAttribute('aria-hidden', 'true');
+    if (activeLetterBottle) {
+      if (!activeLetterBottle.classList.contains('picked')) activeLetterBottle.classList.remove('holding');
+      activeLetterBottle = null;
+    }
+    activeLetterNote = null;
+  }
+  function keepLetterBottle() {
+    var el = activeLetterBottle;
+    var note = activeLetterNote;
+    if (note) {
+      bottleBox.push({ t: note.t, s: note.s });
+      saveBottleBox();
+      renderNoteBox();
+    }
+    if (el) {
+      removeDriftSlot(el.getAttribute('data-note'));
+      el.classList.remove('holding');
+      el.classList.add('picked');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 560);
+      activeLetterBottle = null;
+      toast('纸条收进盒子了');
+    }
+    activeLetterNote = null;
+    closeBottleLetter();
+  }
+  // 让瓶子继续漂：3 秒后瓶子向上消失
+  function releaseLetterBottle() {
+    var el = activeLetterBottle;
+    closeBottleLetter();
+    if (!el) return;
+    el.classList.add('releasing');
+    setTimeout(function () {
+      el.classList.add('floating-up');
+      setTimeout(function () {
+        removeDriftSlot(el.getAttribute('data-note'));
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 640);
+    }, 3000);
   }
   function openBottleNote() {
     var t = $('#noteText');
@@ -608,7 +733,330 @@
     toast('纸条已塞进瓶子');
   }
 
+  /* ---- 海面漂流瓶：随风缓慢漂移 ---- */
+  var DRIFT_SPOTS = [
+    [38, 300, .5, 8], [112, 284, .46, -14], [298, 292, .52, 6], [356, 348, .58, -8],
+    [64, 384, .62, 12], [210, 352, .56, -6], [286, 416, .72, 10], [48, 458, .78, -10],
+    [170, 500, .84, 7], [326, 480, .8, -12], [108, 528, .9, 5]
+  ];
+  var BOTTLE_TAP_ART = '<path d="M-12,-20 C-15,-8 -15,16 -11,26 C-4,30 4,30 11,26 C15,16 15,-8 12,-20 Z" fill="url(#bGlass)" stroke="#8FA6BE" stroke-opacity=".5" stroke-width="1"/>'
+    + '<rect x="-6" y="-31" width="12" height="11" rx="3.5" fill="#D9AE79" stroke="#B08E63" stroke-opacity=".5" stroke-width="1"/>'
+    + '<rect x="-6.6" y="-22" width="13.2" height="3" fill="#F1E6D3" opacity=".92"/>'
+    + '<path d="M-9,-6 C-11,6 -9,16 -5,21" stroke="#FFFFFF" stroke-opacity=".65" stroke-width="1.4" fill="none"/>';
+
+  function bottleInnerArt(kind, seed) {
+    if (kind === 'empty') return '';
+    if (kind === 'deco') {
+      var out = '<rect x="-9" y="17" width="18" height="5" rx="2.4" fill="#EFE0CB" opacity=".7"/>';
+      var n = 1 + (seed % 3);
+      for (var k = 0; k < n; k++) {
+        out += '<g transform="translate(' + (k * 6 - 6 + (seed % 3)) + ',' + (13 + (k % 2) * 6) + ') scale(.42) rotate(' + (k * 28 - 24) + ')">'
+          + BOTTLE_SHELL_ART[(seed + k) % 4] + '</g>';
+      }
+      return out;
+    }
+    return '<rect x="-8" y="1" width="16" height="11" rx="1.5" fill="#FBF4E4" stroke="#CBB69A" stroke-opacity=".55" stroke-width=".8" transform="rotate(-7)"/>'
+      + '<path d="M-5,4 h10 M-5,7 h7" stroke="#D8C9A6" stroke-width=".9" opacity=".8" transform="rotate(-7)"/>';
+  }
+
+  function driftBottleMarkup(x, y, s, rot, i, content) {
+    var dur = 7 + (i % 5) * 2.2;
+    var c = content || makeDriftContent();
+    driftNotes[i] = c;
+    return '<g class="bottle-tap" data-i="' + i + '" data-x="' + x + '" data-y="' + y + '" data-note="' + i + '" transform="translate(' + x + ',' + y + ') scale(' + s + ') rotate(' + rot + ')">'
+      + '<g class="pickwrap">'
+      + '<g class="drift" style="animation-duration:' + dur + 's;animation-delay:' + (-(i % 7) * 1.3) + 's">'
+      + '<ellipse cx="0" cy="16" rx="27" ry="4.4" fill="none" stroke="var(--foam)" stroke-width="1" opacity=".42"/>'
+      + '<g class="bob" style="animation-delay:' + (-(i % 6) * .7) + 's">'
+      + '<g class="tilt" style="animation-delay:' + (-(i % 4) * 1.1) + 's">'
+      + BOTTLE_TAP_ART
+      + bottleInnerArt(c.kind, i)
+      + '</g></g></g></g></g>';
+  }
+
+  /* ---- 海上瓶子的新陈代谢：6-48 小时刷新一只，海满则替换最久没被捞的 ---- */
+  var SEA_KEY = 'bottleSea.v2';
+  var SEA_HOUR = 3600000;
+  var seaState = null;
+  var seaTimer = null;
+
+  function randSeaHours() { return 6 + Math.random() * 42; }
+
+  function loadSeaState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(SEA_KEY) || 'null');
+      if (s && typeof s === 'object' && s.slots && typeof s.slots === 'object') return s;
+    } catch (e) {}
+    return null;
+  }
+  function saveSeaState() {
+    try { localStorage.setItem(SEA_KEY, JSON.stringify(seaState)); } catch (e) {}
+  }
+  function makeSlotContent() {
+    var c = makeDriftContent();
+    return { kind: c.kind, head: c.head, text: c.text, sign: c.sign, bornAt: Date.now() };
+  }
+  function firstEmptySlot() {
+    for (var i = 0; i < DRIFT_SPOTS.length; i++) {
+      if (!seaState.slots[i]) return i;
+    }
+    return -1;
+  }
+  function oldestSlot() {
+    var best = -1, oldest = Infinity;
+    for (var i = 0; i < DRIFT_SPOTS.length; i++) {
+      var c = seaState.slots[i];
+      if (!c) continue;
+      var at = c.bornAt || 0;
+      if (at < oldest) { oldest = at; best = i; }
+    }
+    return best;
+  }
+  function nearestEmptySlot(x, y) {
+    var best = -1, dist = Infinity;
+    for (var i = 0; i < DRIFT_SPOTS.length; i++) {
+      if (seaState.slots[i]) continue;
+      var p = DRIFT_SPOTS[i];
+      var d = (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y);
+      if (d < dist) { dist = d; best = i; }
+    }
+    return best;
+  }
+  function checkSeaRefill() {
+    if (!seaState) return false;
+    var changed = false, guard = 0;
+    while (Date.now() >= seaState.next && guard < 60) {
+      var empty = firstEmptySlot();
+      if (empty >= 0) {
+        seaState.slots[empty] = makeSlotContent();
+      } else {
+        var old = oldestSlot();
+        if (old >= 0) seaState.slots[old] = makeSlotContent();
+      }
+      seaState.next += randSeaHours() * SEA_HOUR;
+      changed = true;
+      guard++;
+    }
+    if (guard >= 60) seaState.next = Date.now() + randSeaHours() * SEA_HOUR;
+    if (changed) saveSeaState();
+    return changed;
+  }
+  function ensureSeaState() {
+    if (seaState) return checkSeaRefill();
+    var changed = false;
+    seaState = loadSeaState();
+    if (!seaState) {
+      seaState = { next: Date.now() + randSeaHours() * SEA_HOUR, slots: {} };
+      for (var i = 0; i < DRIFT_SPOTS.length; i++) seaState.slots[i] = makeSlotContent();
+      saveSeaState();
+      changed = true;
+    }
+    if (checkSeaRefill()) changed = true;
+    return changed;
+  }
+  function startSeaClock() {
+    if (seaTimer) return;
+    seaTimer = setInterval(function () {
+      if (!seaState) return;
+      if (checkSeaRefill()) {
+        renderDriftBottles();
+        toast('海上又漂来一只新瓶子');
+      }
+    }, 60000);
+  }
+  function removeDriftSlot(id) {
+    if (!seaState || !seaState.slots[id]) return;
+    delete seaState.slots[id];
+    saveSeaState();
+  }
+
+  function renderDriftBottles() {
+    var box = $('#driftBottles');
+    if (!box || !seaState) return;
+    var html = '';
+    for (var i = 0; i < DRIFT_SPOTS.length; i++) {
+      var c = seaState.slots[i];
+      if (!c) continue;
+      var p = DRIFT_SPOTS[i];
+      var x = typeof c.x === 'number' ? c.x : p[0];
+      var y = typeof c.y === 'number' ? c.y : p[1];
+      var s = typeof c.s === 'number' ? c.s : p[2];
+      var rot = typeof c.rot === 'number' ? c.rot : p[3];
+      html += driftBottleMarkup(x, y, s, rot, i, c);
+    }
+    box.innerHTML = html;
+  }
+
+  var bottleWindTimer = null;
+  function setBottleWind(w) {
+    var el = $('#pageBottle');
+    if (el) el.style.setProperty('--wind', w.toFixed(2));
+  }
+  function bottleWindTick() {
+    setBottleWind(Math.random() * 2 - 1);
+    bottleWindTimer = setTimeout(bottleWindTick, 14000 + Math.random() * 14000);
+  }
+  function startBottleWind() {
+    if (bottleWindTimer) return;
+    setBottleWind((Math.random() * 2 - 1) * .8);
+    bottleWindTimer = setTimeout(bottleWindTick, 14000 + Math.random() * 14000);
+  }
+
+  /* ---- 主瓶：收起 / 出现在屏幕中央 / 长按抛掷 ---- */
+  var TOSS_TARGETS = { near: { x: 96, y: 528, s: .92 }, mid: { x: 252, y: 418, s: .74 }, far: { x: 312, y: 302, s: .52 } };
+  var bottleLongTimer = null;
+  var bottleLongFired = false;
+
+  function hideTossPop() {
+    var p = $('#tossPop');
+    if (p) { p.classList.add('hidden'); p.setAttribute('aria-hidden', 'true'); }
+  }
+  function openTossPop() {
+    var p = $('#tossPop');
+    if (!p) return;
+    p.classList.remove('hidden');
+    p.setAttribute('aria-hidden', 'false');
+  }
+  function stowMain() {
+    var b = $('#mainBottle'), r = $('#mainRing');
+    if (!b) return;
+    b.classList.remove('tossing', 'showing');
+    b.classList.add('stowed');
+    if (r) r.classList.add('stowed');
+    bottleState.horizontal = false;
+    applyBottleState();
+    hideTossPop();
+  }
+  function showMain() {
+    var b = $('#mainBottle'), a = $('#mainAnchor');
+    if (!b) return;
+    if (a) a.setAttribute('transform', 'translate(195,352)');
+    b.classList.remove('stowed', 'tossing');
+    void b.offsetWidth;
+    b.classList.add('showing');
+    bottleState.horizontal = false;
+    applyBottleState();
+  }
+  function spawnTossedBottle(t) {
+    var box = $('#driftBottles');
+    if (!box || !seaState) return;
+    var idx = nearestEmptySlot(t.x, t.y);
+    if (idx < 0) {
+      idx = oldestSlot();
+      if (idx >= 0) {
+        var old = box.querySelector('[data-i="' + idx + '"]');
+        if (old && old.parentNode) old.parentNode.removeChild(old);
+      }
+    }
+    if (idx < 0) return;
+    var c = makeSlotContent();
+    c.x = t.x;
+    c.y = t.y;
+    c.s = t.s;
+    c.rot = 4;
+    seaState.slots[idx] = c;
+    saveSeaState();
+    box.insertAdjacentHTML('beforeend', driftBottleMarkup(t.x, t.y, t.s, 4, idx, c));
+  }
+  function tossMain(to) {
+    var t = TOSS_TARGETS[to];
+    var b = $('#mainBottle'), r = $('#mainRing');
+    if (!t || !b) return;
+    hideTossPop();
+    closeBottleLetter();
+    dropTimers.forEach(function (x) { clearTimeout(x); });
+    dropTimers = [];
+    b.style.setProperty('--tx', (t.x - 195) + 'px');
+    b.style.setProperty('--ty', (t.y - 352) + 'px');
+    b.classList.remove('showing', 'stowed');
+    void b.offsetWidth;
+    b.classList.add('tossing');
+    if (r) r.classList.add('stowed');
+    dropTimers.push(setTimeout(function () {
+      var sp = $('#mainSplash');
+      if (sp) sp.setAttribute('transform', 'translate(' + t.x + ',' + t.y + ')');
+      playSplash();
+      var sr = $('#seaRing');
+      if (sr) sr.classList.add('on');
+      spawnTossedBottle(t);
+      dropTimers.push(setTimeout(function () { if (sr) sr.classList.remove('on'); }, 1300));
+    }, 1300));
+    dropTimers.push(setTimeout(function () {
+      stowMain();
+      toast('瓶子顺着风漂走了');
+    }, 1480));
+  }
+  function bindBottleLongPress() {
+    var b = $('#mainBottle');
+    if (!b) return;
+    b.addEventListener('pointerdown', function () {
+      if (b.classList.contains('stowed')) return;
+      bottleLongFired = false;
+      clearTimeout(bottleLongTimer);
+      bottleLongTimer = setTimeout(function () {
+        bottleLongFired = true;
+        openTossPop();
+      }, 520);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
+      b.addEventListener(ev, function () { clearTimeout(bottleLongTimer); });
+    });
+  }
+
   /* ================= 标题栏小团子 ================= */
+  /* 波浪形团子身体：边缘用弯曲一点的线条 + 减淡的颜色表现毛绒感 */
+  function fuzzWobblePath(cx, cy, r, seed) {
+    var pts = [], n = 16, i, a, rr;
+    for (i = 0; i < n; i++) {
+      a = Math.PI * 2 * i / n;
+      rr = r * (1 + 0.055 * Math.sin(3 * a + seed) + 0.038 * Math.sin(5 * a + seed * 1.7));
+      pts.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]);
+    }
+    var d = '';
+    for (i = 0; i < n; i++) {
+      var p0 = pts[i], p1 = pts[(i + 1) % n];
+      var mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2;
+      d += (i === 0 ? 'M' + mx.toFixed(1) + ',' + my.toFixed(1) : '') +
+        ' Q' + p0[0].toFixed(1) + ',' + p0[1].toFixed(1) + ' ' + mx.toFixed(1) + ',' + my.toFixed(1);
+    }
+    return d + ' Z';
+  }
+  /* 21 个团子（7 色 × 粒小 / 颗中 / 团大）复用粒颗团成员形象，保持原来的位置和大小 */
+  function fuzzBodyHTML(mem) {
+    var r = mem.tier === 'tuan' ? 13.2 : mem.tier === 'ke' ? 11.6 : 10;
+    var seed = mem.id.length + mem.name.charCodeAt(0);
+    return '<path d="' + fuzzWobblePath(17, 19, r * 0.86, seed + 9) + '" fill="' + mem.color + '" opacity=".3"/>' +
+      '<path d="' + fuzzWobblePath(17, 19, r, seed) + '" fill="' + mem.color + '"/>';
+  }
+  /* 日期一变就换团子；中午 12 点或晚上 0 点各有 30% 概率换 */
+  var FUZZ_ROTATE_KEY = 'fuzzDaily.v1';
+  function fuzzPickOfDay() {
+    var d = new Date();
+    var day = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    var h = d.getHours();
+    var slot = (h === 12 || h === 0) ? 'h' + h : '';
+    var saved = null, idx;
+    try { saved = JSON.parse(localStorage.getItem(FUZZ_ROTATE_KEY) || 'null'); } catch (e) {}
+    if (saved && saved.day === day && typeof saved.idx === 'number') {
+      idx = saved.idx;
+      if (slot && saved.slot !== slot) {
+        if (Math.random() < 0.3) idx = (idx + 1 + Math.floor(Math.random() * 20)) % LIKETUAN_MEMBERS.length;
+        try { localStorage.setItem(FUZZ_ROTATE_KEY, JSON.stringify({ day: day, slot: slot, idx: idx })); } catch (e) {}
+      }
+    } else {
+      idx = Math.floor(Math.random() * LIKETUAN_MEMBERS.length);
+      if (saved && typeof saved.idx === 'number' && saved.idx === idx) idx = (idx + 1) % LIKETUAN_MEMBERS.length;
+      try { localStorage.setItem(FUZZ_ROTATE_KEY, JSON.stringify({ day: day, slot: slot, idx: idx })); } catch (e) {}
+    }
+    return LIKETUAN_MEMBERS[idx];
+  }
+  function fuzzRender() {
+    var body = fuzzBodyHTML(fuzzPickOfDay());
+    [$('#fuzzBody'), $('#fuzzBody2')].forEach(function (box) {
+      if (box) box.innerHTML = body;
+    });
+    fuzzSetFace(fuzzIdx);
+  }
   var FUZZ_FACES = [
     '<ellipse cx="13.4" cy="17.9" rx="1.65" ry="2.45" fill="#5C4A38"/><ellipse cx="20.6" cy="17.9" rx="1.65" ry="2.45" fill="#5C4A38"/>' +
     '<circle cx="13.95" cy="17.1" r=".55" fill="#FFFDF8"/><circle cx="21.15" cy="17.1" r=".55" fill="#FFFDF8"/>' +
@@ -745,9 +1193,9 @@
   function fuzzAction() {
     if (fuzzHidden) return;
     var r = Math.floor(Math.random() * 3);
-    if (r === 0) fuzzPlay('fuzz-hop', 660);
+    if (r === 0) fuzzPlay('fuzz-hop', 820);
     else if (r === 1) fuzzPlay('fuzz-lie', 2820);
-    else fuzzPlay('fuzz-spin', 950);
+    else fuzzPlay('fuzz-spin', 1220);
   }
   function fuzzIdleReset() {
     clearTimeout(fuzzIdleTimer);
@@ -1208,7 +1656,7 @@
       var last = g.messages[g.messages.length - 1];
       var sub = last ? previewOf(last) : memberCountOf(g) + ' 人';
       return '<div class="cell" data-gid="' + g.id + '">' + groupAvatarHTML(g) +
-        '<div class="cell-main"><div class="cell-title">' + (g.muted ? '<span class="muted-ico">🔕</span> ' : '') + esc(g.name) + '</div>' +
+        '<div class="cell-main"><div class="cell-title">' + (g.muted ? '<span class="muted-ico">🔕</span> ' : '') + esc(g.name) + (memberCountOf(g) > 1 ? '<span class="cell-count">(' + memberCountOf(g) + ')</span>' : '') + '</div>' +
         '<div class="cell-sub">' + esc(sub) + '</div></div>' +
         '<div class="cell-time">' + (last ? fmtListTime(last.ts) : '') + '</div></div>';
     }).join('');
@@ -1486,6 +1934,7 @@
       if (profileIsMe === false && activeFriendId) renderProfile();
     }
     statusTimer = setTimeout(tickStatuses, 60000);
+    fuzzRender();
   }
 
   /* ================= 语音 ================= */
@@ -2356,7 +2805,7 @@
 
     document.addEventListener('pointerdown', fuzzIdleReset, true);
     document.addEventListener('keydown', fuzzIdleReset, true);
-    fuzzSetFace(0);
+    fuzzRender();
     fuzzIdleReset();
     fuzzScheduleSpeak();
 
@@ -2392,8 +2841,17 @@
     applyBottleState();
     $('#bottleBack').addEventListener('click', function () { closeScreen('pageBottle'); });
     $('#pageBottle').addEventListener('click', function (e) {
+      if (e.target.closest('.toss-pop')) return;
+      if (bottleLongFired) {
+        bottleLongFired = false;
+        return;
+      }
+      var pop = $('#tossPop');
+      if (pop && !pop.classList.contains('hidden') && !e.target.closest('.bottle-main')) {
+        hideTossPop();
+      }
       var b = e.target.closest('.bottle-tap');
-      if (b) { showBottleLetter(b.getAttribute('data-note')); return; }
+      if (b) { showBottleLetter(b.getAttribute('data-note'), b); return; }
       if (e.target.closest('.bottle-main')) { openBottleNote(); return; }
       var sh = e.target.closest('.sand-shell');
       if (sh && !sh.classList.contains('taken')) {
@@ -2401,8 +2859,6 @@
         sh.classList.add('taken');
         bottleState.collected.push(idx);
         renderBottleArt();
-        var dot = $('#bottleShelf').querySelectorAll('.shelf-dot')[bottleState.collected.length - 1];
-        if (dot) dot.classList.add('on');
         toast('捡起一枚贝壳，放进瓶子');
       }
     });
@@ -2412,58 +2868,37 @@
         btn.classList.add('active');
         bottleState.style = btn.getAttribute('data-style');
         renderBottleArt();
+        showMain();
       });
     });
-    $('#bottleDrop').addEventListener('click', function () {
-      closeBottleLetter();
-      var b = $('#mainBottle');
-      var ring = $('#mainRing');
-      var sp = $('#mainSplash');
-      if (!b) return;
-      dropTimers.forEach(function (t) { clearTimeout(t); });
-      dropTimers = [];
-      b.classList.remove('toss', 'fade');
-      $('#seaRing').classList.remove('on');
-      sp.setAttribute('transform', 'translate(' + BOTTLE_SEA.x + ',' + BOTTLE_SEA.y + ')');
-      bottleState.horizontal = false;
-      applyBottleState();
-      playSplash();
-      setTimeout(function () { b.classList.add('toss'); }, 30);
-      ring.classList.add('hide');
-      dropTimers.push(setTimeout(function () {
-        bottleState.horizontal = true;
-        applyBottleState();
-        $('#seaRing').classList.add('on');
-      }, 980));
-      dropTimers.push(setTimeout(function () {
-        b.classList.add('fade');
-        $('#seaRing').classList.remove('on');
-      }, 3980));
-      toast('瓶子已投入大海');
+    $('#bottleFold').addEventListener('click', function () {
+      var dock = $('#bottleDock');
+      dock.classList.toggle('folded');
+      var folded = dock.classList.contains('folded');
+      this.textContent = folded ? '»' : '«';
+      this.setAttribute('aria-label', folded ? '展开' : '收纳');
+      if (folded) stowMain();
     });
-    $('#bottlePick').addEventListener('click', function () {
-      var b = $('#mainBottle');
-      var d = $('#mainBottleDrops');
-      dropTimers.forEach(function (t) { clearTimeout(t); });
-      dropTimers = [];
-      b.classList.remove('toss', 'fade');
-      $('#seaRing').classList.remove('on');
-      $('#mainRing').classList.remove('hide');
-      $('#mainSplash').setAttribute('transform', 'translate(168,601)');
-      bottleState.horizontal = false;
-      applyBottleState();
-      d.classList.remove('play');
-      setTimeout(function () { d.classList.add('play'); }, 20);
-      setTimeout(function () { d.classList.remove('play'); }, 1100);
-      b.classList.remove('lift');
-      setTimeout(function () { b.classList.add('lift'); }, 20);
-      setTimeout(function () { b.classList.remove('lift'); }, 700);
-      setTimeout(function () {
-        showBottleLetter(Math.floor(Math.random() * BOTTLE_NOTES.length));
-      }, 420);
+    $('#noteFold').addEventListener('click', function () {
+      var box = $('#noteBox');
+      box.classList.toggle('open');
+      var open = box.classList.contains('open');
+      this.textContent = open ? '«' : '»';
+      this.setAttribute('aria-label', open ? '收起' : '纸条盒子');
     });
-    $('#bottleLetterClose').addEventListener('click', closeBottleLetter);
-    $('#bottleNoteBtn').addEventListener('click', openBottleNote);
+    $('#noteBoxList').addEventListener('click', function (e) {
+      var it = e.target.closest('.nb-item');
+      if (it) showBoxNote(Number(it.getAttribute('data-box')));
+    });
+    $('#bottleLetter').addEventListener('click', function (e) {
+      if (e.target === this) closeBottleLetter();
+    });
+    $('#blKeep').addEventListener('click', keepLetterBottle);
+    $('#blReturn').addEventListener('click', releaseLetterBottle);
+    $$('#tossPop .tp-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { tossMain(btn.getAttribute('data-to')); });
+    });
+    bindBottleLongPress();
     $('#noteSave').addEventListener('click', saveBottleNote);
     $('#page-me').addEventListener('click', function (e) {
       var row = e.target.closest('.wx-row');
