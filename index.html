@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EDEDED">
 <title>聊天</title>
-<link rel="stylesheet" href="css/style.css?v=20261107h">
+<link rel="stylesheet" href="css/style.css?v=20261107q">
 </head>
 <body>
 <div class="phone" id="phone">
@@ -21,8 +21,34 @@
     <div class="header">
       <div class="title live" id="title">00:00</div>
       <div class="header-actions" id="headerActions">
-        <button class="icon-btn" id="btnSearch" aria-label="搜索">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.6" cy="10.6" r="6.3"/><path d="M15.4 15.4 20 20"/></svg>
+        <button class="icon-btn fuzz" id="btnFuzz" aria-label="小团子">
+          <svg viewBox="0 0 34 34" aria-hidden="true">
+            <defs>
+              <filter id="fuzzEdge" x="-30%" y="-30%" width="160%" height="160%">
+                <feTurbulence type="fractalNoise" baseFrequency=".11" numOctaves="2" seed="9" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="2.8" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <radialGradient id="fuzzFill" cx=".36" cy=".28" r=".82">
+                <stop offset="0" stop-color="#FFFDF8"/>
+                <stop offset=".68" stop-color="#F8EEDF"/>
+                <stop offset="1" stop-color="#EFE1CD"/>
+              </radialGradient>
+            </defs>
+            <g filter="url(#fuzzEdge)" fill="url(#fuzzFill)">
+              <circle cx="28.3" cy="18.4" r="3.2"/>
+              <circle cx="26.2" cy="25.1" r="3.1"/>
+              <circle cx="20.7" cy="29.2" r="3.2"/>
+              <circle cx="13.3" cy="29.2" r="3.1"/>
+              <circle cx="7.8" cy="25.1" r="3.2"/>
+              <circle cx="5.7" cy="18.4" r="3.1"/>
+              <circle cx="7.8" cy="11.7" r="3.2"/>
+              <circle cx="13.3" cy="7.6" r="3.1"/>
+              <circle cx="20.7" cy="7.6" r="3.2"/>
+              <circle cx="26.2" cy="11.7" r="3.1"/>
+              <circle cx="17" cy="18.4" r="11.6"/>
+            </g>
+            <g id="fuzzFace"></g>
+          </svg>
         </button>
         <button class="icon-btn" id="btnPlus" aria-label="更多">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10.2"/><path d="M12 7v10M7 12h10" stroke-linecap="round"/></svg>
@@ -202,6 +228,13 @@
           </div>
         </div>
       </section>
+    </div>
+
+    <!-- 小团子气泡与问答 -->
+    <div class="fuzz-bubble" id="fuzzBubble" aria-hidden="true"></div>
+    <div class="fuzz-ask" id="fuzzAsk">
+      <div class="fuzz-ask-txt" id="fuzzAskTxt"></div>
+      <div class="fuzz-ask-btns" id="fuzzAskBtns"></div>
     </div>
 
     <!-- 底部导航 -->
@@ -463,6 +496,24 @@
         <div class="detail-title"><span id="chatTitle"></span><span class="detail-count" id="chatCount"></span><span class="chat-status hidden" id="chatStatus"></span></div>
         <button class="detail-back" id="chatMore" aria-label="更多">
           <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        </button>
+        <button class="icon-btn fuzz chat-fuzz" id="btnFuzz2" aria-label="小团子">
+          <svg viewBox="0 0 34 34" aria-hidden="true">
+            <g filter="url(#fuzzEdge)" fill="url(#fuzzFill)">
+              <circle cx="28.3" cy="18.4" r="3.2"/>
+              <circle cx="26.2" cy="25.1" r="3.1"/>
+              <circle cx="20.7" cy="29.2" r="3.2"/>
+              <circle cx="13.3" cy="29.2" r="3.1"/>
+              <circle cx="7.8" cy="25.1" r="3.2"/>
+              <circle cx="5.7" cy="18.4" r="3.1"/>
+              <circle cx="7.8" cy="11.7" r="3.2"/>
+              <circle cx="13.3" cy="7.6" r="3.1"/>
+              <circle cx="20.7" cy="7.6" r="3.2"/>
+              <circle cx="26.2" cy="11.7" r="3.1"/>
+              <circle cx="17" cy="18.4" r="11.6"/>
+            </g>
+            <g id="fuzzFace2"></g>
+          </svg>
         </button>
       </div>
       <div class="msg-area bg-gray" id="msgArea"></div>
@@ -1051,12 +1102,140 @@
 
     <!-- 开场动画 -->
     <div class="splash" id="splash">
-      <div class="splash-text">开场动画</div>
-      <div class="splash-hint">SPLASH</div>
+      <svg class="splash-svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="bRib" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#F57C60"/><stop offset=".55" stop-color="#E24B39"/><stop offset="1" stop-color="#C9382A"/>
+          </linearGradient>
+          <radialGradient id="bPink"><stop offset="0" stop-color="#FFC3D3"/><stop offset="1" stop-color="#FFC3D3" stop-opacity="0"/></radialGradient>
+          <radialGradient id="bPeach"><stop offset="0" stop-color="#FFD9AC"/><stop offset="1" stop-color="#FFD9AC" stop-opacity="0"/></radialGradient>
+          <radialGradient id="bLemon"><stop offset="0" stop-color="#FFF6BE"/><stop offset="1" stop-color="#FFF6BE" stop-opacity="0"/></radialGradient>
+          <radialGradient id="bMint"><stop offset="0" stop-color="#BEEFD3"/><stop offset="1" stop-color="#BEEFD3" stop-opacity="0"/></radialGradient>
+          <radialGradient id="bSky"><stop offset="0" stop-color="#BFDEFA"/><stop offset="1" stop-color="#BFDEFA" stop-opacity="0"/></radialGradient>
+          <radialGradient id="bLilac"><stop offset="0" stop-color="#D8CCF7"/><stop offset="1" stop-color="#D8CCF7" stop-opacity="0"/></radialGradient>
+          <clipPath id="bootClip"><ellipse cx="195" cy="422" rx="110" ry="104"/></clipPath>
+          <filter id="bootFuzz" x="-25%" y="-25%" width="150%" height="150%">
+            <feTurbulence type="fractalNoise" baseFrequency=".032" numOctaves="3" seed="7" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="bootWashBlur" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="16"/>
+          </filter>
+          <filter id="bootBgBlur" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="42"/>
+          </filter>
+        </defs>
+
+        <rect width="390" height="844" fill="#FFFFFF"/>
+
+        <!-- 右上角红线（长） -->
+        <g class="boot-rib boot-rib-long">
+          <path pathLength="1" d="M 404,34 C 362,120 340,208 304,318" fill="none" stroke="#6B4A3A" stroke-width="17" stroke-linecap="round"/>
+          <path pathLength="1" d="M 404,34 C 362,120 340,208 304,318" fill="none" stroke="url(#bRib)" stroke-width="12" stroke-linecap="round"/>
+        </g>
+        <!-- 左下角红线（长） -->
+        <g class="boot-rib boot-rib-long">
+          <path pathLength="1" d="M -6,806 C 38,704 64,636 104,558" fill="none" stroke="#6B4A3A" stroke-width="17" stroke-linecap="round"/>
+          <path pathLength="1" d="M -6,806 C 38,704 64,636 104,558" fill="none" stroke="url(#bRib)" stroke-width="12" stroke-linecap="round"/>
+        </g>
+
+        <!-- 团子 -->
+        <g class="boot-blobpop">
+          <g class="boot-blobturn">
+            <g filter="url(#bootFuzz)">
+              <circle cx="195" cy="422" r="112" fill="#FDF3E6"/>
+              <g clip-path="url(#bootClip)" filter="url(#bootWashBlur)">
+                <circle cx="128" cy="366" r="90" fill="url(#bPink)" opacity=".62"/>
+                <circle cx="250" cy="350" r="84" fill="url(#bPeach)" opacity=".62"/>
+                <circle cx="118" cy="474" r="86" fill="url(#bLilac)" opacity=".62"/>
+                <circle cx="276" cy="452" r="82" fill="url(#bMint)" opacity=".62"/>
+                <circle cx="196" cy="516" r="92" fill="url(#bSky)" opacity=".62"/>
+                <circle cx="198" cy="392" r="66" fill="url(#bLemon)" opacity=".58"/>
+              </g>
+              <g clip-path="url(#bootClip)">
+                <path d="M 76,480 Q 195,450 314,480 L 314,548 Q 195,560 76,548 Z" fill="#FFE7D3" opacity=".9"/>
+                <path d="M 126,502 q 12,9 24,-1" stroke="#F0C2A6" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+                <path d="M 172,512 q 12,9 24,-1" stroke="#F0C2A6" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+                <path d="M 218,504 q 12,9 24,-1" stroke="#F0C2A6" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+              </g>
+            </g>
+            <g class="boot-back">
+              <path d="M 195,332 q 26,12 16,30 q -10,16 -24,5" stroke="#F3C7AB" stroke-width="4" fill="none" stroke-linecap="round"/>
+            </g>
+            <g class="boot-front">
+              <ellipse cx="161" cy="404" rx="9" ry="12" fill="#5C4436"/>
+              <ellipse cx="231" cy="404" rx="9" ry="12" fill="#5C4436"/>
+              <circle cx="164" cy="400" r="3" fill="#fff"/>
+              <circle cx="234" cy="400" r="3" fill="#fff"/>
+              <ellipse cx="135" cy="430" rx="17" ry="10" fill="#F7A6A2" opacity=".78"/>
+              <ellipse cx="256" cy="430" rx="17" ry="10" fill="#F7A6A2" opacity=".78"/>
+              <path d="M 188,424 q 8,9 16,0" stroke="#6B4A3A" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+            </g>
+          </g>
+        </g>
+
+        <!-- 被拉过来的红线（短线，压在团子前面） -->
+        <g class="boot-rib-short">
+          <path d="M 404,34 C 348,152 296,350 216,464" fill="none" stroke="#6B4A3A" stroke-width="15" stroke-linecap="round" opacity=".95"/>
+          <path d="M 404,34 C 348,152 296,350 216,464" fill="none" stroke="url(#bRib)" stroke-width="10.5" stroke-linecap="round"/>
+        </g>
+        <g class="boot-rib-short boot-rib-short-b">
+          <path d="M -6,806 C 26,664 116,546 182,476" fill="none" stroke="#6B4A3A" stroke-width="15" stroke-linecap="round" opacity=".95"/>
+          <path d="M -6,806 C 26,664 116,546 182,476" fill="none" stroke="url(#bRib)" stroke-width="10.5" stroke-linecap="round"/>
+        </g>
+
+        <!-- 两只小手 -->
+        <g class="boot-hand boot-hand-a">
+          <ellipse cx="303" cy="319" rx="18" ry="14.5" fill="#FFE9D6" transform="rotate(-22 303 319)"/>
+          <path d="M 292,313 q 5,-6 9,-1 M 301,311 q 5,-6 9,-1" stroke="#EFC7AC" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+        </g>
+        <g class="boot-hand boot-hand-b">
+          <ellipse cx="102" cy="558" rx="18" ry="14.5" fill="#FFE9D6" transform="rotate(18 102 558)"/>
+          <path d="M 95,552 q 5,-6 9,-1 M 104,551 q 5,-6 9,-1" stroke="#EFC7AC" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- 蝴蝶结 -->
+        <g class="boot-bow">
+          <path d="M 197,470 C 170,436 142,438 142,458 C 142,477 170,481 197,470" fill="url(#bRib)" stroke="#6B4A3A" stroke-width="3.4"/>
+          <path d="M 197,470 C 224,436 252,438 252,458 C 252,477 224,481 197,470" fill="url(#bRib)" stroke="#6B4A3A" stroke-width="3.4"/>
+          <path d="M 197,470 q -16,28 -30,40" stroke="#6B4A3A" stroke-width="8.6" fill="none" stroke-linecap="round"/>
+          <path d="M 197,470 q -16,28 -30,40" stroke="url(#bRib)" stroke-width="5.4" fill="none" stroke-linecap="round"/>
+          <path d="M 197,470 q 16,28 30,40" stroke="#6B4A3A" stroke-width="8.6" fill="none" stroke-linecap="round"/>
+          <path d="M 197,470 q 16,28 30,40" stroke="url(#bRib)" stroke-width="5.4" fill="none" stroke-linecap="round"/>
+          <circle cx="197" cy="470" r="9" fill="#D8402E" stroke="#6B4A3A" stroke-width="3"/>
+        </g>
+
+        <!-- 揉成的红线团 -->
+        <g class="boot-yarn">
+          <circle cx="197" cy="470" r="30" fill="#E14E3C"/>
+          <g stroke="#C2372A" stroke-width="2.6" fill="none" opacity=".8">
+            <path d="M 170,458 q 30,22 54,7"/>
+            <path d="M 167,472 q 34,-17 60,5"/>
+            <path d="M 175,488 q 27,11 48,-11"/>
+            <path d="M 183,452 q 16,34 22,38"/>
+          </g>
+        </g>
+
+        <!-- 抛上去炸开的纯色团子 -->
+        <g class="boot-dots" filter="url(#bootFuzz)">
+          <circle class="boot-dot" cx="195" cy="215" r="48" fill="#FFC9D6" style="--tx:-155px;--ty:539px;animation-delay:4.46s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="52" fill="#FFD9AE" style="--tx:150px;--ty:535px;animation-delay:4.44s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="40" fill="#FFF3B8" style="--tx:-22px;--ty:547px;animation-delay:4.50s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="44" fill="#C4F0D8" style="--tx:96px;--ty:543px;animation-delay:4.47s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="30" fill="#C6E4FB" style="--tx:172px;--ty:557px;animation-delay:4.53s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="34" fill="#DCD1FA" style="--tx:-160px;--ty:553px;animation-delay:4.49s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="22" fill="#FFB09E" style="--tx:36px;--ty:565px;animation-delay:4.56s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="26" fill="#FFF0DE" style="--tx:-28px;--ty:561px;animation-delay:4.52s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="20" fill="#FFD3DE" style="--tx:122px;--ty:567px;animation-delay:4.55s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="24" fill="#D4F3E2" style="--tx:-132px;--ty:563px;animation-delay:4.51s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="18" fill="#D8ECFC" style="--tx:62px;--ty:569px;animation-delay:4.57s"/>
+          <circle class="boot-dot" cx="195" cy="215" r="20" fill="#FFF8CE" style="--tx:-106px;--ty:567px;animation-delay:4.54s"/>
+        </g>
+      </svg>
     </div>
 
   </div>
 </div>
-<script src="js/app.js?v=20261107m"></script>
+<script src="js/app.js?v=20261107z6"></script>
 </body>
 </html>

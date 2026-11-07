@@ -20,6 +20,31 @@
   var DEFAULT_EMOJI_GROUP = 'eg_default';
 
   var DB = loadDB();
+  var LIKETUAN_ID = 'g_liketuan';
+  var LT_COLORS = [
+    { k: 'red', cn: '红', hex: '#FF6B6B' },
+    { k: 'orange', cn: '橙', hex: '#FF9F45' },
+    { k: 'yellow', cn: '黄', hex: '#FFD24C' },
+    { k: 'green', cn: '绿', hex: '#6FD08C' },
+    { k: 'cyan', cn: '青', hex: '#4EC8C8' },
+    { k: 'blue', cn: '蓝', hex: '#6FA8FF' },
+    { k: 'purple', cn: '紫', hex: '#B38CFF' }
+  ];
+  var LT_TIERS = [
+    { k: 'li', cn: '粒' },
+    { k: 'ke', cn: '颗' },
+    { k: 'tuan', cn: '团' }
+  ];
+  var LIKETUAN_MEMBERS = (function () {
+    var out = [];
+    LT_TIERS.forEach(function (t) {
+      LT_COLORS.forEach(function (c) {
+        out.push({ id: 'lm_' + c.k + '_' + t.k, name: c.cn + t.cn, color: c.hex, tier: t.k });
+      });
+    });
+    return out;
+  })();
+  seedLiketuan();
   var activeTab = 'chat';
   var activeGroupId = null;
   var selected = {};
@@ -98,6 +123,7 @@
           g.pinned = !!g.pinned;
           g.muted = !!g.muted;
           g.bg = g.bg || 'gray';
+          if (Array.isArray(g.members)) g.members.forEach(function (m) { delete m._av; });
           return g;
         }),
         cards: (Array.isArray(d.cards) ? d.cards : []).map(function (c) {
@@ -148,6 +174,45 @@
     } catch (e) {
       toast('本地存储空间不足，头像可换小一点');
       return false;
+    }
+  }
+
+  // 默认系统会话「粒颗团」：21 人（7 色 × 粒/颗/团 三种大小），每人一张带脸带名字标签的头像
+  function seedLiketuan() {
+    var now = Date.now();
+    var seededMsgs = [
+      { id: 'm_lt1', type: 'text', mine: false, senderId: 'lm_red_li', text: '新来的团子，先滚一圈打个招呼吧～', ts: now - 9 * 60 * 1000 },
+      { id: 'm_lt2', type: 'text', mine: false, senderId: 'lm_yellow_ke', text: '刚刚被捏了一下，我鼓起来了', ts: now - 6 * 60 * 1000 },
+      { id: 'm_lt3', type: 'text', mine: false, senderId: 'lm_cyan_tuan', text: '安静一会，能量在慢慢散开', ts: now - 3 * 60 * 1000 },
+      { id: 'm_lt4', type: 'text', mine: false, senderId: 'lm_purple_li', text: '我先滚到角落睡一觉啦', ts: now - 40 * 1000 }
+    ];
+    var g = groupById(LIKETUAN_ID);
+    if (!g) {
+      DB.groups.unshift({
+        id: LIKETUAN_ID,
+        name: '粒颗团',
+        memberIds: [],
+        members: LIKETUAN_MEMBERS.slice(),
+        memberCount: 21,
+        avatar: 'img/liketuan.svg',
+        system: true,
+        createdAt: now - 10 * 60 * 1000,
+        messages: seededMsgs,
+        pinned: false,
+        muted: false,
+        bg: 'gray'
+      });
+      saveDB();
+      return;
+    }
+    // 旧版本已注入过：补上成员，并只替换系统种子消息
+    if (!Array.isArray(g.members) || !g.members.length) {
+      g.members = LIKETUAN_MEMBERS.slice();
+      if (!g.memberCount) g.memberCount = 21;
+      g.messages = seededMsgs.concat((g.messages || []).filter(function (m) {
+        return String(m.id || '').indexOf('m_lt') !== 0;
+      }));
+      saveDB();
     }
   }
 
@@ -233,7 +298,56 @@
     return '<div class="av"' + attr + ' style="background:' + ((f && f.color) || '#07C160') + '">' + esc(initial(f && f.name)) + '</div>';
   }
 
+  function memberCountOf(g) {
+    return g.memberCount || g.memberIds.length;
+  }
+
+  var LIKETUAN_AVATAR_CACHE = {};
+
+  // 「粒颗团」成员头像：像开场动画里落地散开的纯色团子，底部沉到框外，只露到嘴巴下面一点，带腮红
+  function blobAvatarFor(mem) {
+    if (LIKETUAN_AVATAR_CACHE[mem.id]) return LIKETUAN_AVATAR_CACHE[mem.id];
+    var r = mem.tier === 'tuan' ? 42 : mem.tier === 'ke' ? 33 : 26;
+    var ry = Math.round(r * 0.94 * 10) / 10;
+    var cy = 110 - ry;
+    var ey = Math.round((cy - r * 0.1) * 10) / 10;
+    var my = Math.round((cy + r * 0.2) * 10) / 10;
+    var ex = Math.round(r * 0.2 * 10) / 10;
+    var ew = Math.round(r * 0.1 * 10) / 10;
+    var eh = Math.round(r * 0.16 * 10) / 10;
+    var mw = Math.round(r * 0.36 * 10) / 10;
+    var bx = Math.round(r * 0.62 * 10) / 10;
+    var by = Math.round((my - r * 0.02) * 10) / 10;
+    var brx = Math.round(r * 0.18 * 10) / 10;
+    var bry = Math.round(r * 0.11 * 10) / 10;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+      '<rect width="100" height="100" fill="#FFFBF4"/>' +
+      '<ellipse cx="50" cy="' + cy + '" rx="' + r + '" ry="' + ry + '" fill="' + mem.color + '"/>' +
+      '<ellipse cx="' + (50 - ex) + '" cy="' + ey + '" rx="' + ew + '" ry="' + eh + '" fill="#5C4436"/>' +
+      '<ellipse cx="' + (50 + ex) + '" cy="' + ey + '" rx="' + ew + '" ry="' + eh + '" fill="#5C4436"/>' +
+      '<path d="M' + (50 - mw / 2) + ',' + my + ' q' + (mw / 2) + ',' + (Math.round(r * 0.12 * 10) / 10) + ' ' + mw + ',0" stroke="#5C4436" stroke-width="' + (Math.round(r * 0.055 * 10) / 10) + '" fill="none" stroke-linecap="round"/>' +
+      '<ellipse cx="' + (50 - bx) + '" cy="' + by + '" rx="' + brx + '" ry="' + bry + '" fill="#F58A96" opacity=".55"/>' +
+      '<ellipse cx="' + (50 + bx) + '" cy="' + by + '" rx="' + brx + '" ry="' + bry + '" fill="#F58A96" opacity=".55"/>' +
+      '</svg>';
+    LIKETUAN_AVATAR_CACHE[mem.id] = 'data:image/svg+xml,' + encodeURIComponent(svg);
+    return LIKETUAN_AVATAR_CACHE[mem.id];
+  }
+
+  function memberAsFriend(mem) {
+    return { id: mem.id, name: mem.name, color: mem.color, avatar: blobAvatarFor(mem) };
+  }
+
+  function liketuanMember(id) {
+    var g = groupById(activeGroupId);
+    if (!g || !Array.isArray(g.members)) return null;
+    for (var i = 0; i < g.members.length; i++) {
+      if (g.members[i].id === id) return g.members[i];
+    }
+    return null;
+  }
+
   function groupAvatarHTML(g) {
+    if (g.avatar) return '<div class="gav gav-1"><img src="' + g.avatar + '" alt=""></div>';
     var members = g.memberIds.map(friendById).filter(Boolean).slice(0, 4);
     if (!members.length) return '<div class="gav gav-1"><span style="background:#C9C9C9">群</span></div>';
     return '<div class="gav gav-' + members.length + '">' + members.map(function (m) {
@@ -492,6 +606,157 @@
     renderBottleArt();
     closeSheets();
     toast('纸条已塞进瓶子');
+  }
+
+  /* ================= 标题栏小团子 ================= */
+  var FUZZ_FACES = [
+    '<ellipse cx="13.4" cy="17.9" rx="1.65" ry="2.45" fill="#5C4A38"/><ellipse cx="20.6" cy="17.9" rx="1.65" ry="2.45" fill="#5C4A38"/>' +
+    '<circle cx="13.95" cy="17.1" r=".55" fill="#FFFDF8"/><circle cx="21.15" cy="17.1" r=".55" fill="#FFFDF8"/>' +
+    '<path d="M15.8,21.5 q1.2,1.2 2.4,0" stroke="#8A6A52" stroke-width=".85" fill="none" stroke-linecap="round"/>',
+    '<path d="M11.4,18.5 q2,-2.2 4,0" stroke="#5C4A38" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+    '<path d="M18.6,18.5 q2,-2.2 4,0" stroke="#5C4A38" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+    '<ellipse cx="17" cy="21.9" rx="1.9" ry="1.3" fill="#E89A92"/>' +
+    '<ellipse cx="11.2" cy="20.6" rx="1.7" ry="1.05" fill="#F2A9A2" opacity=".55"/><ellipse cx="22.8" cy="20.6" rx="1.7" ry="1.05" fill="#F2A9A2" opacity=".55"/>',
+    '<ellipse cx="13.4" cy="18.3" rx="1.65" ry="1.5" fill="#5C4A38"/><ellipse cx="20.6" cy="18.3" rx="1.65" ry="1.5" fill="#5C4A38"/>' +
+    '<path d="M11.7,17.1 h3.4M18.9,17.1 h3.4" stroke="#8A6A52" stroke-width=".8" stroke-linecap="round" opacity=".65"/>' +
+    '<ellipse cx="17" cy="21.7" rx="1.05" ry=".8" fill="#8A6A52" opacity=".8"/>',
+    '<ellipse cx="13.4" cy="17.6" rx="1.9" ry="2.9" fill="#5C4A38"/><ellipse cx="20.6" cy="17.6" rx="1.9" ry="2.9" fill="#5C4A38"/>' +
+    '<circle cx="13.9" cy="16.6" r=".6" fill="#FFFDF8"/><circle cx="21.1" cy="16.6" r=".6" fill="#FFFDF8"/>' +
+    '<ellipse cx="17" cy="22.2" rx="1.5" ry="1.8" fill="#8A6A52"/>',
+    '<ellipse cx="13.4" cy="17.9" rx="1.65" ry="2.45" fill="#5C4A38"/><circle cx="13.95" cy="17.1" r=".55" fill="#FFFDF8"/>' +
+    '<path d="M18.4,18.5 q2,-2.2 4,0" stroke="#5C4A38" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+    '<path d="M15.9,21.6 q1.1,1 2.2,0" stroke="#8A6A52" stroke-width=".85" fill="none" stroke-linecap="round"/>',
+    '<ellipse cx="13.4" cy="17.9" rx="1.65" ry="2.45" fill="#5C4A38"/><ellipse cx="20.6" cy="17.9" rx="1.65" ry="2.45" fill="#5C4A38"/>' +
+    '<circle cx="13.95" cy="17.1" r=".55" fill="#FFFDF8"/><circle cx="21.15" cy="17.1" r=".55" fill="#FFFDF8"/>' +
+    '<path d="M15.9,21.2 q1.1,1.4 2.2,0" stroke="#8A6A52" stroke-width=".9" fill="none" stroke-linecap="round"/>' +
+    '<ellipse cx="17" cy="22.7" rx="1.25" ry="1.35" fill="#F0A0A0"/>'
+  ];
+  var fuzzIdx = 0;
+  var fuzzIdleTimer = null;
+  var fuzzLoopTimer = null;
+  /* 系统库1：小团子随机会说的话（只存在代码里，不对外展示） */
+  var SYS_LIB_1 = [
+    '当前链接不错哦',
+    '当前链接不稳',
+    '现在能量平稳',
+    'ta好像很想你啦，理理ta？',
+    '能量好杂乱，头晕晕，平静一会吧……'
+  ];
+  var fuzzSpeakTimer = null;
+  var fuzzHideTimer = null;
+  var fuzzAnimTimer = null;
+  var fuzzHidden = false;
+  var fuzzAskKind = null;
+  var fuzzEnergyNext = 0;   /* 能量问答的冷却截止时间：3 分钟内只问一次 */
+
+  function fuzzEls() {
+    return [$('#btnFuzz'), $('#btnFuzz2')].filter(Boolean);
+  }
+  function fuzzSay(text, ms) {
+    var el = $('#fuzzBubble');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(fuzzHideTimer);
+    fuzzHideTimer = setTimeout(function () { el.classList.remove('show'); }, ms || 6200);
+  }
+  function fuzzSpeak() {
+    if (fuzzHidden) return;
+    fuzzSay(SYS_LIB_1[Math.floor(Math.random() * SYS_LIB_1.length)]);
+  }
+  /* 说下一句的时间在 0.6 秒 ~ 20 分钟之间随机，同一句可以连续出现 */
+  function fuzzScheduleSpeak() {
+    clearTimeout(fuzzSpeakTimer);
+    var delay = 600 + Math.random() * (1200000 - 600);
+    fuzzSpeakTimer = setTimeout(function () {
+      fuzzSpeak();
+      fuzzScheduleSpeak();
+    }, delay);
+  }
+
+  function fuzzHideAsk() {
+    $('#fuzzAsk').classList.remove('show');
+    fuzzAskKind = null;
+  }
+  function fuzzShowAsk(kind) {
+    if (fuzzHidden) return;
+    fuzzAskKind = kind;
+    var txt = $('#fuzzAskTxt');
+    var btns = $('#fuzzAskBtns');
+    if (kind === 'energy') {
+      txt.textContent = '要感应一下现在的能量吗？';
+      btns.innerHTML = '<button class="fuzz-chip main" data-act="yes">感应一下</button>' +
+        '<button class="fuzz-chip" data-act="no">先不了</button>';
+    } else {
+      var qs = ['我要回避一下吗？', '我们一会再见？'];
+      txt.textContent = qs[Math.floor(Math.random() * qs.length)];
+      btns.innerHTML = '<button class="fuzz-chip main" data-act="bye">我们下次玩</button>' +
+        '<button class="fuzz-chip" data-act="stay">一起玩</button>';
+    }
+    $('#fuzzAsk').classList.add('show');
+  }
+  function fuzzHideAll() {
+    fuzzHidden = true;
+    clearTimeout(fuzzIdleTimer);
+    clearTimeout(fuzzSpeakTimer);
+    clearTimeout(fuzzHideTimer);
+    clearTimeout(fuzzAnimTimer);
+    if (fuzzLoopTimer) { clearInterval(fuzzLoopTimer); fuzzLoopTimer = null; }
+    fuzzEls().forEach(function (el) { el.classList.add('hidden'); });
+    $('#fuzzBubble').classList.remove('show');
+    fuzzHideAsk();
+  }
+  function fuzzRevive() {
+    if (!fuzzHidden) return;
+    fuzzHidden = false;
+    fuzzEls().forEach(function (el) { el.classList.remove('hidden', 'fuzz-bye'); });
+    fuzzSetFace(0);
+    fuzzIdleReset();
+    fuzzScheduleSpeak();
+  }
+  function fuzzBye() {
+    fuzzHideAsk();
+    fuzzSay('下次见', 900);
+    setTimeout(function () { fuzzPlay('fuzz-bye', 900); }, 120);
+    setTimeout(fuzzHideAll, 1040);
+  }
+
+  function fuzzSetFace(i) {
+    fuzzIdx = i;
+    [$('#fuzzFace'), $('#fuzzFace2')].forEach(function (box) {
+      if (box) box.innerHTML = FUZZ_FACES[i];
+    });
+  }
+  function fuzzRandomFace() {
+    var i = fuzzIdx;
+    while (i === fuzzIdx) i = Math.floor(Math.random() * FUZZ_FACES.length);
+    fuzzSetFace(i);
+  }
+  function fuzzPlay(cls, ms) {
+    var els = fuzzEls();
+    if (!els.length) return;
+    els.forEach(function (el) { el.classList.remove('fuzz-hop', 'fuzz-lie', 'fuzz-spin', 'fuzz-pop'); });
+    setTimeout(function () { els.forEach(function (el) { el.classList.add(cls); }); }, 16);
+    clearTimeout(fuzzAnimTimer);
+    fuzzAnimTimer = setTimeout(function () {
+      els.forEach(function (el) { el.classList.remove(cls); });
+    }, ms);
+  }
+  function fuzzAction() {
+    if (fuzzHidden) return;
+    var r = Math.floor(Math.random() * 3);
+    if (r === 0) fuzzPlay('fuzz-hop', 660);
+    else if (r === 1) fuzzPlay('fuzz-lie', 2820);
+    else fuzzPlay('fuzz-spin', 950);
+  }
+  function fuzzIdleReset() {
+    clearTimeout(fuzzIdleTimer);
+    if (fuzzLoopTimer) { clearInterval(fuzzLoopTimer); fuzzLoopTimer = null; }
+    if (fuzzHidden) return;
+    fuzzIdleTimer = setTimeout(function () {
+      fuzzAction();
+      fuzzLoopTimer = setInterval(fuzzAction, 7200);
+    }, 9000);
   }
 
   function openSheet(id) {
@@ -941,7 +1206,7 @@
     }
     list.innerHTML = groups.map(function (g) {
       var last = g.messages[g.messages.length - 1];
-      var sub = last ? previewOf(last) : g.memberIds.length + ' 人';
+      var sub = last ? previewOf(last) : memberCountOf(g) + ' 人';
       return '<div class="cell" data-gid="' + g.id + '">' + groupAvatarHTML(g) +
         '<div class="cell-main"><div class="cell-title">' + (g.muted ? '<span class="muted-ico">🔕</span> ' : '') + esc(g.name) + '</div>' +
         '<div class="cell-sub">' + esc(sub) + '</div></div>' +
@@ -965,6 +1230,7 @@
     applyBg(g.bg);
     renderMessages();
     openScreen('pageChatDetail');
+    fuzzRevive();
     setTimeout(scrollMessages, 80);
   }
 
@@ -1016,6 +1282,7 @@
     }
     var mine = m.mine !== false;
     var cls = mine ? 'mine' : 'their';
+    var nameLine = '';
     var av;
     if (mine) {
       av = avatarHTML(DB.me, '__me__');
@@ -1024,10 +1291,13 @@
         inner = '<div class="bubble-row"><i class="read-dot" title="未读"></i>' + inner + '</div>';
       }
     } else {
-      var f = (m.senderId ? friendById(m.senderId) : null) || singleFriend() || { name: '友', color: '#9AA7B4' };
-      av = avatarHTML(f, f.id || '');
+      var mem = m.senderId ? liketuanMember(m.senderId) : null;
+      var f = (m.senderId ? friendById(m.senderId) : null) || (mem ? memberAsFriend(mem) : null) || singleFriend() || { name: m.senderName || '友', color: m.senderColor || '#9AA7B4' };
+      av = avatarHTML(f, mem ? '' : (f.id || ''));
+      var g = groupById(activeGroupId);
+      if (g && memberCountOf(g) >= 3 && f && f.name) nameLine = '<div class="msg-sender">' + esc(f.name) + '</div>';
     }
-    var body = '<div class="msg-body">' + inner + '</div>';
+    var body = '<div class="msg-body">' + nameLine + inner + '</div>';
     return '<div class="msg ' + cls + '" data-mid="' + m.id + '">' + (mine ? body + av : av + body) + '</div>';
   }
 
@@ -1035,7 +1305,8 @@
     var g = groupById(activeGroupId);
     if (!g) return;
     $('#chatTitle').textContent = typingOn ? '对方正在输入…' : g.name;
-    $('#chatCount').textContent = g.memberIds.length > 1 ? '(' + g.memberIds.length + ')' : '';
+    var count = memberCountOf(g);
+    $('#chatCount').textContent = count > 1 ? '(' + count + ')' : '';
     var st = $('#chatStatus');
     var f = g.memberIds.length === 1 ? friendById(g.memberIds[0]) : null;
     if (f && f.status) {
@@ -1574,7 +1845,17 @@
   }
 
   function renderCiMembers(g) {
-    var html = g.memberIds.map(friendById).filter(Boolean).map(function (f) {
+    var html = '';
+    if (Array.isArray(g.members) && g.members.length) {
+      html = g.members.map(function (m) {
+        var f = memberAsFriend(m);
+        return '<div class="ci-member">' + avatarHTML(f) + '<div class="nm">' + esc(f.name) + '</div></div>';
+      }).join('');
+      $('#ciMembers').innerHTML = html;
+      return;
+    }
+    if (!g.memberIds.length && g.memberCount) html = '<div class="ci-count">群成员 ' + g.memberCount + ' 人</div>';
+    html += g.memberIds.map(friendById).filter(Boolean).map(function (f) {
       return '<div class="ci-member">' + avatarHTML(f, f.id) + '<div class="nm">' + esc(f.name) + '</div></div>';
     }).join('');
     html += '<button class="ci-add" id="ciAddMember" aria-label="添加成员">＋</button>';
@@ -2016,10 +2297,68 @@
       $('#plusMenu').classList.contains('open') ? closeMenu() : openMenu();
     });
     $('#mask').addEventListener('click', closeMenu);
-    $('#btnSearch').addEventListener('click', function () {
-      this.classList.add('active');
-      setTimeout(function () { $('#btnSearch').classList.remove('active'); }, 220);
+    var fuzzLongPressed = false;
+    fuzzEls().forEach(function (el) {
+      el.addEventListener('click', function () {
+        if (fuzzLongPressed) { fuzzLongPressed = false; return; }
+        if (fuzzHidden) return;
+        fuzzRandomFace();
+        fuzzPlay('fuzz-pop', 440);
+        fuzzIdleReset();
+        if (Date.now() >= fuzzEnergyNext) {
+          fuzzEnergyNext = Date.now() + 180000;
+          fuzzShowAsk('energy');
+        }
+      });
     });
+
+    /* 聊天页长按团子：问要不要回避 */
+    (function () {
+      var el = $('#btnFuzz2');
+      if (!el) return;
+      var timer = null;
+      el.addEventListener('pointerdown', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          fuzzLongPressed = true;
+          fuzzShowAsk('hide');
+        }, 460);
+      });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+        el.addEventListener(ev, function () { clearTimeout(timer); });
+      });
+    })();
+
+    /* 问答按钮 */
+    $('#fuzzAskBtns').addEventListener('click', function (e) {
+      var btn = e.target.closest('.fuzz-chip');
+      if (!btn) return;
+      var act = btn.dataset.act;
+      if (act === 'yes') {
+        fuzzHideAsk();
+        setTimeout(function () { fuzzSpeak(); }, 320);
+      } else if (act === 'no') {
+        fuzzHideAsk();
+      } else if (act === 'bye') {
+        fuzzBye();
+      } else if (act === 'stay') {
+        fuzzHideAsk();
+        fuzzSay('好呐', 4200);
+      }
+    });
+
+    /* 点空白处收起问答 */
+    document.addEventListener('pointerdown', function (e) {
+      if (!$('#fuzzAsk').classList.contains('show')) return;
+      if (e.target.closest('.fuzz-ask') || e.target.closest('#btnFuzz') || e.target.closest('#btnFuzz2')) return;
+      fuzzHideAsk();
+    }, true);
+
+    document.addEventListener('pointerdown', fuzzIdleReset, true);
+    document.addEventListener('keydown', fuzzIdleReset, true);
+    fuzzSetFace(0);
+    fuzzIdleReset();
+    fuzzScheduleSpeak();
 
     /* 加号菜单 */
     $('#plusMenu').addEventListener('click', function (e) {
@@ -2248,6 +2587,7 @@
       closeScreen('pageChatDetail');
       closePanels();
       activeGroupId = null;
+      fuzzRevive();
     });
     $('#chatMore').addEventListener('click', openChatSettings);
     $('#msgInput').addEventListener('input', updateSendState);
@@ -2846,8 +3186,8 @@
     var splash = $('#splash');
     setTimeout(function () {
       splash.classList.add('hide');
-      setTimeout(function () { splash.remove(); }, 360);
-    }, 2000);
+      setTimeout(function () { splash.remove(); }, 520);
+    }, 6400);
   }
 
   function fitPhone() {

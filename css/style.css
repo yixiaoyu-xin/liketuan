@@ -31,6 +31,44 @@ input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;
 .icon-btn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--ink);border-radius:50%;transition:transform .15s,opacity .15s}
 .icon-btn:active{transform:scale(.9);opacity:.6}
 .icon-btn svg{width:25px;height:25px;display:block}
+.icon-btn.fuzz{width:34px;height:34px}
+.icon-btn.fuzz svg{width:34px;height:34px;overflow:visible}
+.fuzz-hop{animation:fuzzHop .64s ease-in-out}
+@keyframes fuzzHop{0%,100%{transform:translateY(0) scale(1)}16%{transform:translateY(0) scale(1.1,.82)}46%{transform:translateY(-8px) scale(.94,1.08)}68%{transform:translateY(1px) scale(1.08,.9)}86%{transform:translateY(-2px) scale(1)}}
+.fuzz-lie{animation:fuzzLie 2.8s ease-in-out}
+@keyframes fuzzLie{0%,100%{transform:translateY(0) rotate(0) scale(1)}18%,74%{transform:translateY(6px) rotate(9deg) scale(1.08,.7)}}
+.fuzz-spin{animation:fuzzSpin .92s cubic-bezier(.3,.8,.3,1)}
+@keyframes fuzzSpin{0%{transform:rotate(0)}55%{transform:rotate(280deg)}100%{transform:rotate(360deg)}}
+.fuzz-pop{animation:fuzzPop .44s ease-out}
+@keyframes fuzzPop{0%{transform:scale(1)}30%{transform:scale(.86,1.12)}62%{transform:scale(1.06,.94)}100%{transform:scale(1)}}
+.fuzz-bubble{position:absolute;z-index:48;right:10px;top:92px;max-width:222px;padding:9px 13px;
+  border-radius:18px;border:1px solid rgba(150,120,86,.16);
+  background:rgba(255,252,245,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  color:#5C4A38;font-size:12.5px;line-height:1.6;letter-spacing:.3px;
+  box-shadow:0 6px 18px rgba(96,74,48,.13);
+  opacity:0;transform:translateY(-4px) scale(.94);transform-origin:88% 0;pointer-events:none;
+  transition:opacity .24s ease,transform .24s cubic-bezier(.2,.8,.3,1)}
+.fuzz-bubble.show{opacity:1;transform:translateY(0) scale(1)}
+.fuzz-bubble::before{content:"";position:absolute;right:70px;top:-5px;width:10px;height:10px;border-radius:2px;
+  background:rgba(255,252,245,.82);border-left:1px solid rgba(150,120,86,.14);border-top:1px solid rgba(150,120,86,.14);transform:rotate(45deg)}
+.icon-btn.chat-fuzz{position:absolute;right:50px;top:6px;width:34px;height:34px}
+.fuzz-ask{position:absolute;z-index:49;right:10px;top:92px;width:198px;padding:11px 12px 10px;
+  border-radius:18px;border:1px solid rgba(150,120,86,.16);
+  background:rgba(255,252,245,.82);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  box-shadow:0 6px 18px rgba(96,74,48,.13);
+  opacity:0;transform:translateY(-4px) scale(.94);transform-origin:88% 0;pointer-events:none;
+  transition:opacity .2s ease,transform .2s cubic-bezier(.2,.8,.3,1)}
+.fuzz-ask.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.fuzz-ask::before{content:"";position:absolute;right:72px;top:-5px;width:10px;height:10px;border-radius:2px;
+  background:rgba(255,252,245,.86);border-left:1px solid rgba(150,120,86,.14);border-top:1px solid rgba(150,120,86,.14);transform:rotate(45deg)}
+.fuzz-ask-txt{font-size:12.5px;line-height:1.6;letter-spacing:.3px;color:#5C4A38;margin-bottom:9px}
+.fuzz-ask-btns{display:flex;gap:8px}
+.fuzz-chip{flex:1;height:29px;border-radius:15px;font-size:12px;letter-spacing:.2px;color:#7A6247;
+  background:rgba(255,255,255,.7);border:1px solid rgba(150,120,86,.22);transition:transform .12s,background .12s}
+.fuzz-chip:active{transform:scale(.94);background:#fff}
+.fuzz-chip.main{background:#F3DCC4;border-color:rgba(176,133,92,.3);color:#6B5237}
+.fuzz-bye{animation:fuzzBye .86s cubic-bezier(.45,.05,.7,.9) forwards}
+@keyframes fuzzBye{0%{transform:translateY(0) scale(1);opacity:1}26%{transform:translateY(-7px) scale(1.05);opacity:1}100%{transform:translateY(112px) scale(.5);opacity:0}}
 .icon-btn.active{opacity:.55}
 
 /* ---------- 内容区 ---------- */
@@ -180,11 +218,57 @@ input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 /* ---------- 开场动画 ---------- */
-.splash{position:absolute;top:0;right:0;bottom:0;left:0;z-index:100;background:#fff;display:flex;align-items:center;justify-content:center;border-radius:44px;transition:opacity .34s ease}
+.splash{position:absolute;top:0;right:0;bottom:0;left:0;z-index:100;background:#fff;overflow:hidden;border-radius:44px;transition:opacity .5s ease}
 .splash.hide{opacity:0;pointer-events:none}
-.splash-text{font-size:17px;letter-spacing:6px;color:#C4C4C4;opacity:0;transform:translateY(6px);animation:splashIn .7s cubic-bezier(.2,.8,.2,1) .1s forwards}
-@keyframes splashIn{to{opacity:1;transform:none}}
-.splash-hint{position:absolute;bottom:72px;left:0;right:0;text-align:center;font-size:11.5px;color:#D8D8D8;letter-spacing:3px}
+.splash-svg{width:100%;height:100%;display:block}
+
+.boot-rib-long path{stroke-dasharray:1 1;stroke-dashoffset:1;animation:bootDraw 1s cubic-bezier(.3,.8,.4,1) .1s forwards}
+.boot-rib-long{animation:bootRibOut .3s ease 2.05s forwards}
+@keyframes bootDraw{to{stroke-dashoffset:0}}
+@keyframes bootRibOut{to{opacity:0}}
+.boot-rib-short{opacity:0;animation:bootRibIn .42s ease 2.05s forwards, bootRibOut2 .35s ease 3.1s forwards}
+.boot-rib-short-b{animation-delay:2.16s, 3.1s}
+@keyframes bootRibIn{to{opacity:1}}
+@keyframes bootRibOut2{to{opacity:0}}
+.boot-blobpop{transform-box:fill-box;transform-origin:50% 50%;opacity:0;animation:bootPop .55s cubic-bezier(.3,1.5,.5,1) .55s forwards, bootPopOut .45s ease 4.42s forwards}
+@keyframes bootPop{0%{transform:scale(.35);opacity:0}55%{opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes bootPopOut{to{opacity:0;transform:scale(.9)}}
+.boot-blobturn{transform-box:fill-box;transform-origin:50% 50%}
+.boot-back{transform-box:fill-box;transform-origin:50% 50%;animation:bootBackOut .5s ease 1.28s forwards}
+@keyframes bootBackOut{to{opacity:0;transform:translateX(26px) scale(.94)}}
+.boot-front{transform-box:fill-box;transform-origin:50% 50%;opacity:0;animation:bootFrontIn .78s cubic-bezier(.3,.8,.3,1) 1.55s forwards}
+@keyframes bootFrontIn{0%{opacity:0;transform:translateX(-36px) scale(.9)}60%{opacity:1}100%{opacity:1;transform:translateX(0) scale(1)}}
+.boot-hand{opacity:0;animation:bootHand 1.45s ease-in-out 1.95s forwards}
+.boot-hand-b{animation-name:bootHandB}
+@keyframes bootHand{
+  0%{opacity:0;transform:translate(0,0)}
+  14%,28%{opacity:1;transform:translate(0,0)}
+  52%,72%{opacity:1;transform:translate(-106px,151px)}
+  100%{opacity:0;transform:translate(-106px,151px) scale(.9)}
+}
+@keyframes bootHandB{
+  0%{opacity:0;transform:translate(0,0)}
+  14%,28%{opacity:1;transform:translate(0,0)}
+  52%,72%{opacity:1;transform:translate(95px,-88px)}
+  100%{opacity:0;transform:translate(95px,-88px) scale(.9)}
+}
+.boot-bow{transform-box:fill-box;transform-origin:50% 42%;opacity:0;animation:bootBow .52s cubic-bezier(.3,1.6,.5,1) 2.72s forwards, bootBowOut .34s ease 3.14s forwards}
+@keyframes bootBow{0%{opacity:0;transform:scale(.2) rotate(-14deg)}55%{opacity:1}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes bootBowOut{to{opacity:0;transform:scale(.32) rotate(24deg)}}
+.boot-yarn{transform-box:fill-box;transform-origin:50% 50%;opacity:0;animation:bootYarnIn .24s ease 3.12s forwards, bootYarnKnead .5s ease-in-out 3.38s, bootToss .5s cubic-bezier(.15,.85,.35,1) 3.9s forwards, bootYarnPop .28s ease 4.42s forwards}
+@keyframes bootYarnIn{to{opacity:1}}
+@keyframes bootYarnKnead{0%{transform:rotate(0) scale(.72)}30%{transform:rotate(-15deg) scale(.95)}62%{transform:rotate(13deg) scale(1.06)}100%{transform:rotate(0) scale(1)}}
+@keyframes bootToss{0%{transform:translate(0,0) scale(1)}100%{transform:translate(0,-256px) scale(.8)}}
+@keyframes bootYarnPop{0%{opacity:1}100%{opacity:0;transform:translate(0,-256px) scale(1.55)}}
+.boot-dot{transform-box:fill-box;transform-origin:50% 100%;opacity:0;animation:bootDot 1.3s cubic-bezier(.34,.6,.5,1) forwards}
+@keyframes bootDot{
+  0%{opacity:0;transform:translate(0,0) scale(.1)}
+  24%{opacity:1;transform:translate(calc(var(--tx,0px) * .72),-72px) scale(1)}
+  74%{opacity:1;transform:translate(var(--tx,0px),var(--ty,0px)) scale(1)}
+  82%{opacity:1;transform:translate(var(--tx,0px),var(--ty,0px)) scale(1.16,.82)}
+  92%{opacity:1;transform:translate(var(--tx,0px),var(--ty,0px)) scale(.96,1.04)}
+  100%{opacity:1;transform:translate(var(--tx,0px),var(--ty,0px)) scale(1)}
+}
 
 /* ---------- 通讯录 ---------- */
 #page-contacts{overflow:hidden}
@@ -457,6 +541,7 @@ input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;
 /* ---------- 聊天信息页（参考微信） ---------- */
 .chat-info-body{flex:1;overflow-y:auto;background:#EDEDED;padding-bottom:30px;-webkit-overflow-scrolling:touch}
 .ci-members{display:flex;flex-wrap:wrap;gap:16px;padding:20px 16px;background:#fff}
+.ci-count{width:100%;font-size:13px;color:#8A8A8A;line-height:1.4}
 .ci-member{width:56px;text-align:center}
 .ci-member .av{width:56px;height:56px;border-radius:6px;font-size:20px;margin:0 auto;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff}
 .ci-member .av img{width:100%;height:100%;object-fit:cover}
