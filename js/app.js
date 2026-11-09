@@ -16,8 +16,44 @@
     '😭', '😢', '🥺', '😤', '😡', '🤬', '😱', '😨', '😰', '🤔', '🤨', '😐', '😑', '🙄', '😬', '🤗',
     '🤭', '🤫', '😶', '😮', '😲', '🥳', '🤩', '🤤', '😋', '😵', '🤯', '🥶', '😇', '🤠', '💩', '👻',
     '👍', '👌', '✌️', '🙏', '👏', '💪', '🤝', '❤️', '💔', '💯', '🔥', '🎉', '🌹', '🍉', '🍺', '🐶'];
+  var STICKERS = [
+    { src: 'img/stickers/s01.png', name: '最喜欢你了' },
+    { src: 'img/stickers/s02.png', name: '马上来' },
+    { src: 'img/stickers/s03.png', name: '爱你' },
+    { src: 'img/stickers/s04.png', name: '忘了' },
+    { src: 'img/stickers/s05.png', name: '难受' },
+    { src: 'img/stickers/s06.png', name: '太棒了' },
+    { src: 'img/stickers/s07.png', name: '晚安啦' },
+    { src: 'img/stickers/s08.png', name: '记住了' },
+    { src: 'img/stickers/s09.png', name: '忙死了' },
+    { src: 'img/stickers/s10.png', name: '喜欢你' },
+    { src: 'img/stickers/s11.png', name: '分享给你' },
+    { src: 'img/stickers/s12.png', name: '开会中' },
+    { src: 'img/stickers/s13.png', name: '无语' },
+    { src: 'img/stickers/s14.png', name: '好冷' },
+    { src: 'img/stickers/s15.png', name: '恭喜' },
+    { src: 'img/stickers/s16.png', name: '真的?' },
+    { src: 'img/stickers/s17.png', name: '收到' },
+    { src: 'img/stickers/s18.png', name: '吃瓜' },
+    { src: 'img/stickers/s19.png', name: '抱抱' },
+    { src: 'img/stickers/s20.png', name: '啊?' },
+    { src: 'img/stickers/s21.png', name: '想吃' },
+    { src: 'img/stickers/s22.png', name: '发呆' },
+    { src: 'img/stickers/s23.png', name: '难过' },
+    { src: 'img/stickers/s24.png', name: '开心' },
+    { src: 'img/stickers/s25.png', name: '等我' },
+    { src: 'img/stickers/s26.png', name: '好耶' },
+    { src: 'img/stickers/s27.png', name: '不要' },
+    { src: 'img/stickers/s28.png', name: '好的' },
+    { src: 'img/stickers/s29.png', name: '对不起' },
+    { src: 'img/stickers/s30.png', name: '谢谢' },
+    { src: 'img/stickers/s31.png', name: '拜拜' },
+    { src: 'img/stickers/s32.png', name: '嗨' }
+  ];
   var STATUS_POOL = ['在线', '忙碌中', '摸鱼中', '在听歌', '发呆', '出门散步', '学习中', '追剧中', '健身中', '准备休息'];
   var DEFAULT_EMOJI_GROUP = 'eg_default';
+  var STICKER_GROUP_ID = 'eg_sticker';
+  var STICKER_GROUP_NAME = '贴贴纸';
 
   var DB = loadDB();
   var LIKETUAN_ID = 'g_liketuan';
@@ -103,6 +139,21 @@
     if (!out.some(function (g) { return g.builtin; })) {
       out.unshift({ id: DEFAULT_EMOJI_GROUP, name: '默认表情', items: EMOJIS.slice(), builtin: true });
     }
+
+    /* 「贴贴纸」系统自带库：固定在「默认表情」后面，内容每次打开都按内置清单还原，删不掉也清不空 */
+    out = out.filter(function (g) { return g.id !== STICKER_GROUP_ID; });
+    var stickerGroup = {
+      id: STICKER_GROUP_ID,
+      name: STICKER_GROUP_NAME,
+      items: STICKERS.map(function (x) { return { src: x.src, name: x.name }; }),
+      builtin: true,
+      system: true
+    };
+    var defIdx = -1;
+    for (var k = 0; k < out.length; k++) {
+      if (out[k].id === DEFAULT_EMOJI_GROUP) { defIdx = k; break; }
+    }
+    out.splice(defIdx >= 0 ? defIdx + 1 : 0, 0, stickerGroup);
     return out;
   }
 
@@ -180,12 +231,6 @@
   // 默认系统会话「粒颗团」：21 人（7 色 × 粒/颗/团 三种大小），每人一张带脸带名字标签的头像
   function seedLiketuan() {
     var now = Date.now();
-    var seededMsgs = [
-      { id: 'm_lt1', type: 'text', mine: false, senderId: 'lm_red_li', text: '新来的团子，先滚一圈打个招呼吧～', ts: now - 9 * 60 * 1000 },
-      { id: 'm_lt2', type: 'text', mine: false, senderId: 'lm_yellow_ke', text: '刚刚被捏了一下，我鼓起来了', ts: now - 6 * 60 * 1000 },
-      { id: 'm_lt3', type: 'text', mine: false, senderId: 'lm_cyan_tuan', text: '安静一会，能量在慢慢散开', ts: now - 3 * 60 * 1000 },
-      { id: 'm_lt4', type: 'text', mine: false, senderId: 'lm_purple_li', text: '我先滚到角落睡一觉啦', ts: now - 40 * 1000 }
-    ];
     var g = groupById(LIKETUAN_ID);
     if (!g) {
       DB.groups.unshift({
@@ -197,7 +242,8 @@
         avatar: 'img/liketuan.svg',
         system: true,
         createdAt: now - 10 * 60 * 1000,
-        messages: seededMsgs,
+        messages: [],
+        cleared: true,
         pinned: false,
         muted: false,
         bg: 'gray'
@@ -205,15 +251,20 @@
       saveDB();
       return;
     }
-    // 旧版本已注入过：补上成员，并只替换系统种子消息
+    var dirty = false;
+    // 旧版本已注入过：补上成员
     if (!Array.isArray(g.members) || !g.members.length) {
       g.members = LIKETUAN_MEMBERS.slice();
       if (!g.memberCount) g.memberCount = 21;
-      g.messages = seededMsgs.concat((g.messages || []).filter(function (m) {
-        return String(m.id || '').indexOf('m_lt') !== 0;
-      }));
-      saveDB();
+      dirty = true;
     }
+    // 聊天记录一次性清空，之后不再自动补示例消息
+    if (g.cleared !== true) {
+      g.messages = [];
+      g.cleared = true;
+      dirty = true;
+    }
+    if (dirty) saveDB();
   }
 
   function uid(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -1148,9 +1199,7 @@
     var pageNotes = hpPage < notePages ? mn.slice(hpPage * HP_PER_PAGE, hpPage * HP_PER_PAGE + HP_PER_PAGE) : [];
 
     if (!pageNotes.length) {
-      list.innerHTML = mn.length
-        ? '<div class="hp-empty">空白一页</div>'
-        : '<div class="hp-empty">这个月还没有记录</div>';
+      list.innerHTML = mn.length ? '<div class="hp-empty">空白一页</div>' : '';
     } else {
       list.innerHTML = pageNotes.map(function (n) {
         var k = hpNotes.indexOf(n);
@@ -1163,6 +1212,62 @@
 
     var pi = $('#pageIndicator');
     if (pi) pi.textContent = (hpPage + 1) + ' / ' + total;
+  }
+
+  /* 翻页特效：书页绕书脊横向转过去，纸面带弧面明暗与投影 */
+  function hpFlip(dir, cb) {
+    var right = $('#hpRight');
+    var pages = right && right.parentNode;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!right || !pages || reduce) { cb(); return; }
+
+    var oldFlip = pages.querySelector('.hp-flip');
+    if (oldFlip && oldFlip.parentNode) oldFlip.parentNode.removeChild(oldFlip);
+
+    function faceFrom(src) {
+      var s = src.cloneNode(true);
+      if (s.removeAttribute) s.removeAttribute('id');
+      Array.prototype.forEach.call(s.querySelectorAll('[id]'), function (n) { n.removeAttribute('id'); });
+      Array.prototype.forEach.call(s.querySelectorAll('.hp-toc,.hp-month-panel,.hp-date-panel'), function (n) {
+        n.classList.remove('active');
+      });
+      Array.prototype.forEach.call(s.querySelectorAll('.hp-free,.hp-freeimg'), function (n) {
+        n.classList.remove('editing');
+      });
+      s.classList.remove('hp-deleting');
+      return s;
+    }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'hp-flip ' + (dir >= 0 ? 'flip-out' : 'flip-in');
+
+    var page = document.createElement('div');
+    page.className = 'hp-flip-page';
+
+    var front = document.createElement('div');
+    front.className = 'hp-flip-face hp-flip-front';
+    var back = document.createElement('div');
+    back.className = 'hp-flip-face hp-flip-back';
+
+    page.appendChild(front);
+    page.appendChild(back);
+    wrap.appendChild(page);
+
+    if (dir >= 0) {
+      /* 往后翻：旧页从右往左翻走，新页在下面 */
+      front.appendChild(faceFrom(right));
+      pages.appendChild(wrap);
+      cb();
+    } else {
+      /* 往前翻：新页从书脊那边翻回来，落定后与下面的内容完全一致 */
+      cb();
+      front.appendChild(faceFrom(right));
+      pages.appendChild(wrap);
+    }
+
+    setTimeout(function () {
+      if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+    }, 900);
   }
 
   /* 月份面板 */
@@ -1184,8 +1289,8 @@
         hpExtra = 0;
         var dn = $('#dateNum');
         if (dn) dn.textContent = String(new Date().getDate()).padStart(2, '0');
-        hpRender();
         panel.classList.remove('active');
+        hpFlip(1, hpRender);
       });
     });
   }
@@ -1217,8 +1322,8 @@
         if (dn) dn.textContent = hpDay === null
           ? String(new Date().getDate()).padStart(2, '0')
           : String(hpDay).padStart(2, '0');
-        hpRender();
         panel.classList.remove('active');
+        hpFlip(-1, hpRender);
       });
     });
   }
@@ -1241,9 +1346,10 @@
     list.innerHTML = html;
     Array.prototype.forEach.call(list.querySelectorAll('.hp-toc-item'), function (item) {
       item.addEventListener('click', function () {
-        hpPage = parseInt(item.getAttribute('data-p'), 10);
-        hpRender();
+        var target = parseInt(item.getAttribute('data-p'), 10);
         $('#tocPanel').classList.remove('active');
+        if (target === hpPage) return;
+        hpFlip(target > hpPage ? 1 : -1, function () { hpPage = target; hpRender(); });
       });
     });
   }
@@ -1257,8 +1363,11 @@
   /* 删除模式（胶带） */
   function hpSetDelete(on) {
     hpDeleteMode = on;
+    if (on) hpExitEdit();
     var list = $('#notesList');
     if (list) list.classList.toggle('hp-deleting', on);
+    var right = $('#hpRight');
+    if (right) right.classList.toggle('hp-deleting', on);
     var btn = $('#tapeBtn');
     if (btn) {
       var closed = btn.querySelector('.hp-tape-closed');
@@ -1269,14 +1378,42 @@
     }
   }
 
-  /* 自由文字：拖动 / 缩放 */
+  /* 自由内容：默认锁定（不可拖动），双击后才进入可拖动/可缩放的编辑态 */
+  function hpExitEdit() {
+    var right = $('#hpRight');
+    if (!right) return;
+    Array.prototype.forEach.call(right.querySelectorAll('.hp-free,.hp-freeimg'), function (el) {
+      el.classList.remove('editing');
+      if (el.classList.contains('hp-free')) el.contentEditable = 'false';
+    });
+  }
+
+  function hpEnterEdit(el) {
+    var right = $('#hpRight');
+    if (!el || !right) return;
+    hpExitEdit();
+    el.classList.add('editing');
+    if (el.classList.contains('hp-free')) {
+      el.contentEditable = 'true';
+      el.focus();
+      try {
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } catch (err) {}
+    }
+  }
+
+  /* 拖动（仅编辑态生效） */
   function hpDraggable(el) {
     var sx = 0, sy = 0, ox = 0, oy = 0, on = false;
     el.addEventListener('mousedown', start);
     el.addEventListener('touchstart', start, { passive: false });
     function start(e) {
+      if (!el.classList.contains('editing')) return;
       if (e.target && e.target.classList.contains('hp-handle')) return;
-      if (el.contentEditable === 'true' && e.target !== el) return;
       on = true;
       var p = e.touches ? e.touches[0] : e;
       sx = p.clientX; sy = p.clientY;
@@ -1296,23 +1433,34 @@
     document.addEventListener('touchend', end);
   }
 
+  /* 缩放（文字改字号，图片改宽度；仅编辑态生效） */
   function hpResizable(el) {
     var handle = el.querySelector('.hp-handle');
     if (!handle) return;
-    var sy = 0, base = 16, on = false;
+    var sx = 0, sy = 0, on = false, base = 16, baseW = 0;
+    var isImg = el.classList.contains('hp-freeimg');
     function start(e) {
+      if (!el.classList.contains('editing')) return;
       if (e.stopPropagation) e.stopPropagation();
+      if (e.preventDefault) e.preventDefault();
       on = true;
       var p = e.touches ? e.touches[0] : e;
-      sy = p.clientY;
-      base = parseInt(window.getComputedStyle(el).fontSize, 10) || 16;
+      sx = p.clientX; sy = p.clientY;
+      if (isImg) baseW = el.offsetWidth;
+      else base = parseInt(window.getComputedStyle(el).fontSize, 10) || 16;
     }
     handle.addEventListener('mousedown', start);
     handle.addEventListener('touchstart', start, { passive: false });
     function move(e) {
       if (!on) return;
       var p = e.touches ? e.touches[0] : e;
-      el.style.fontSize = Math.max(12, base + (sy - p.clientY) * 0.5) + 'px';
+      if (isImg) {
+        var maxW = el.parentNode ? el.parentNode.offsetWidth - 16 : 320;
+        el.style.maxWidth = 'none';
+        el.style.width = Math.max(48, Math.min(baseW + (p.clientX - sx), maxW)) + 'px';
+      } else {
+        el.style.fontSize = Math.max(11, base + (sy - p.clientY) * 0.5) + 'px';
+      }
     }
     function end() { on = false; }
     document.addEventListener('mousemove', move);
@@ -1326,11 +1474,34 @@
     if (!right) return;
     var box = document.createElement('div');
     box.className = 'hp-freeimg';
-    box.style.left = '50px';
-    box.style.top = '160px';
-    box.innerHTML = '<img src="' + src + '" alt="">';
+    box.style.left = '20px';
+    box.style.top = '150px';
+    box.innerHTML = '<img src="' + src + '" alt=""><div class="hp-handle"></div>';
     right.appendChild(box);
     hpDraggable(box);
+    hpResizable(box);
+    hpEnterEdit(box);
+  }
+
+  /* 导出结果预览（避免手机上被直接弹走） */
+  function hpShowView(url) {
+    var old = document.querySelector('.hp-view');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    var box = document.createElement('div');
+    box.className = 'hp-view';
+    box.innerHTML = (url ? '<img src="' + url + '" alt="">' : '') +
+      '<div class="hp-view-tip">' + (url
+        ? '长按图片即可保存到相册<br>电脑上可右键「图片另存为」'
+        : '导出需要联网加载后重试') + '</div>' +
+      '<button class="hp-view-close" type="button">关闭</button>';
+    var page = $('#pageDiary');
+    (page || document.body).appendChild(box);
+    box.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t === box || (t.classList && t.classList.contains('hp-view-close'))) {
+        if (box.parentNode) box.parentNode.removeChild(box);
+      }
+    });
   }
 
   /* 添加笔记弹窗 */
@@ -1448,12 +1619,12 @@
     var prev = $('#prevPageBtn');
     if (prev) prev.addEventListener('click', function () {
       hpSetDelete(false);
-      if (hpPage > 0) { hpPage--; hpRender(); }
+      if (hpPage > 0) hpFlip(-1, function () { hpPage--; hpRender(); });
     });
     var next = $('#nextPageBtn');
     if (next) next.addEventListener('click', function () {
       hpSetDelete(false);
-      if (hpPage < hpTotalPages() - 1) { hpPage++; hpRender(); }
+      if (hpPage < hpTotalPages() - 1) hpFlip(1, function () { hpPage++; hpRender(); });
     });
 
     /* 加一页 */
@@ -1462,7 +1633,7 @@
       hpSetDelete(false);
       hpExtra++;
       hpPage = hpTotalPages() - 1;
-      hpRender();
+      hpFlip(1, function () { hpRender(); });
     });
 
     /* 胶带：删除模式 */
@@ -1492,6 +1663,59 @@
       if (fimg) fimg.remove();
     });
 
+    /* 双击（手机上连续点两下）进入编辑态：可拖动、可缩放 */
+    if (right) {
+      right.addEventListener('dblclick', function (e) {
+        if (hpDeleteMode) return;
+        var el = e.target.closest ? e.target.closest('.hp-free,.hp-freeimg') : null;
+        if (el) { e.preventDefault(); hpEnterEdit(el); }
+      });
+
+      var lastTapAt = 0, lastTapEl = null;
+      right.addEventListener('touchend', function (e) {
+        if (hpDeleteMode) return;
+        var el = e.target.closest ? e.target.closest('.hp-free,.hp-freeimg') : null;
+        if (!el) return;
+        var now = Date.now();
+        if (now - lastTapAt < 320 && lastTapEl === el) {
+          hpEnterEdit(el);
+          lastTapAt = 0;
+          lastTapEl = null;
+        } else {
+          lastTapAt = now;
+          lastTapEl = el;
+        }
+      });
+
+      /* 鼠标/触控板：同一元素 350ms 内连按两下也算双击 */
+      var lastDownAt = 0, lastDownEl = null;
+      right.addEventListener('mousedown', function (e) {
+        if (hpDeleteMode) return;
+        var el = e.target.closest ? e.target.closest('.hp-free,.hp-freeimg') : null;
+        if (!el) { lastDownAt = 0; lastDownEl = null; return; }
+        var now = Date.now();
+        if (now - lastDownAt < 350 && lastDownEl === el) {
+          hpEnterEdit(el);
+          lastDownAt = 0;
+          lastDownEl = null;
+        } else {
+          lastDownAt = now;
+          lastDownEl = el;
+        }
+      });
+    }
+
+    /* 点空白处 = 确认落位，退出编辑态 */
+    var pageEl = $('#pageDiary');
+    if (pageEl) pageEl.addEventListener('click', function (e) {
+      if (hpDeleteMode) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
+      if (t.closest('.hp-free,.hp-freeimg,.hp-side,.hp-back,.hp-tape,.hp-pen,.hp-toc,' +
+        '.hp-month-panel,.hp-date-panel,.hp-mask,.hp-view,.hp-title,.hp-month,.hp-date,.hp-ribbon')) return;
+      hpExitEdit();
+    });
+
     /* 导入图片 */
     var fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -1517,48 +1741,32 @@
     if (pen) pen.addEventListener('click', function () {
       hpSetDelete(false);
       if (!right) return;
+      hpExitEdit();
       var el = document.createElement('div');
-      el.className = 'hp-free selected';
+      el.className = 'hp-free';
       el.contentEditable = 'true';
-      el.style.left = '36px';
-      el.style.top = '140px';
+      el.style.left = '26px';
+      el.style.top = '130px';
       el.innerHTML = '写点什么...<div class="hp-handle"></div>';
       right.appendChild(el);
-      el.focus();
-      try {
-        var range = document.createRange();
-        range.selectNodeContents(el);
-        if (range.startContainer.firstChild) range.selectNode(range.startContainer.firstChild);
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-      } catch (err) {}
       hpDraggable(el);
       hpResizable(el);
-      setTimeout(function () {
-        document.addEventListener('click', function onDoc(ev) {
-          if (!el.contains(ev.target)) {
-            el.classList.remove('selected');
-            document.removeEventListener('click', onDoc);
-          }
-        });
-      }, 10);
+      hpEnterEdit(el);
     });
 
-    /* 导出图片 */
+    /* 导出图片：先在本页预览，避免手机上被直接弹走 */
     var exp = $('#exportBtn');
-    if (exp) exp.addEventListener('click', function () {
+    if (exp) exp.addEventListener('click', function (e) {
+      if (e && e.stopPropagation) e.stopPropagation();
       hpSetDelete(false);
       hpClosePanels();
-      if (typeof html2canvas !== 'function') return;
+      if (typeof html2canvas !== 'function') { hpShowView(null); return; }
       html2canvas(right, { scale: 2, useCORS: true, backgroundColor: '#faf8f3', logging: false })
         .then(function (canvas) {
-          var title = ($('#notebookTitle') && $('#notebookTitle').textContent.trim()) || '我的手账';
-          var a = document.createElement('a');
-          a.download = title + '_第' + (hpPage + 1) + '页.png';
-          a.href = canvas.toDataURL('image/png');
-          a.click();
-        })['catch'](function () {});
+          var url = '';
+          try { url = canvas.toDataURL('image/png'); } catch (err) { url = ''; }
+          hpShowView(url || null);
+        })['catch'](function () { hpShowView(null); });
     });
 
     /* 添加笔记 */
@@ -2302,6 +2510,7 @@
     updateSendState();
     applyBg(g.bg);
     renderMessages();
+    guideSync();
     openScreen('pageChatDetail');
     fuzzRevive();
     setTimeout(scrollMessages, 80);
@@ -2311,6 +2520,186 @@
     var area = $('#msgArea');
     area.classList.remove('bg-gray', 'bg-white', 'bg-warm');
     area.classList.add('bg-' + (bg || 'gray'));
+  }
+
+  /* ================= 新手指引（只对「粒颗团」这一个会话） ================= */
+  var GUIDE_ITEMS = [
+    { k: 'voice', n: '语音消息', lines: [
+      '点一下输入框右边那个小圆按钮，就能从打字切回语音，按住说话、松手发送。',
+      '不想打字就直接说，最长能录 60 秒，说完自己也能先听一遍。'
+    ] },
+    { k: 'emoji', n: '表情面板', lines: [
+      '点输入框右边的笑脸，底下会弹出表情面板。',
+      '面板里有「默认表情」和「贴贴纸」两栏，右边还能自己新建一栏。'
+    ] },
+    { k: 'sticker', n: '贴贴纸', lines: [
+      '表情面板里第二个标签就是「贴贴纸」，32 张是系统自带的，删不掉，重开网站也在。',
+      '第一张就是「最喜欢你了」，发到聊天里是透明底的，不会带白框。'
+    ] },
+    { k: 'card', n: '字卡面板', lines: [
+      '加号左边那个小卡片按钮，点开是一句句现成的话，点一下直接发。',
+      '面板下面能按分组筛，也能搜索；长按还能进批量模式，一次挑好几条。'
+    ] },
+    { k: 'album', n: '相册', lines: [
+      '点输入框右边的加号，第一页第一个就是相册，从手机里挑张图发出去。',
+      '发出去的图在会话里点一下就能看大图。'
+    ] },
+    { k: 'camera', n: '拍摄', lines: [
+      '加号里的「拍摄」会直接开相机，拍完就能发。',
+      '跟在微信里发照片是一个路子。'
+    ] },
+    { k: 'call', n: '视频通话', lines: [
+      '加号里的「视频通话」，可以选语音通话或者视频通话。',
+      '挂断之后，会话里会留下一条通话记录，点它还能再打一次。'
+    ] },
+    { k: 'more', n: '更多功能', lines: [
+      '加号里还有位置、红包、礼物、转账，这些还在做，点了会提示「功能待开发」。',
+      '第二页是收藏、个人名片、文件、音乐，位置都在那儿。'
+    ] },
+    { k: 'longpress', n: '长按消息', lines: [
+      '长按任意一条气泡，会弹出复制、回复、引用、翻译、收藏这些操作。',
+      '自己发的消息 2 分钟内还能撤回，超时就只剩删除了。'
+    ] },
+    { k: 'multi', n: '多选消息', lines: [
+      '长按菜单里选「多选」，可以一次勾好几条，一块儿转发或者一起删。',
+      '勾错了点一下取消，不会影响原来那条。'
+    ] },
+    { k: 'chatinfo', n: '聊天信息', lines: [
+      '点右上角那三个点「…」进聊天信息，能置顶、能免打扰、能换聊天背景。',
+      '底下还有清空聊天记录、加成员、打开自动回复。'
+    ] },
+    { k: 'bg', n: '聊天背景', lines: [
+      '聊天信息里有灰、白、暖三种底色，点一下整个会话就换个氛围。',
+      '只影响这一个会话，别的聊天还是原来的样子。'
+    ] },
+    { k: 'contact', n: '通讯录', lines: [
+      '底栏第二根蓝色柱子是通讯录，右边有字母索引条，点着就能跳。',
+      '点进某个朋友能看资料、改备注，也能从这儿新建好友。'
+    ] },
+    { k: 'newgroup', n: '发起群聊', lines: [
+      '聊天页右上角那个加号，就是「发起群聊」，勾几个人就成一个新群。',
+      '只有这个「粒颗团」是自己弹指引的，你自己建的群不会。'
+    ] },
+    { k: 'moments', n: '朋友圈', lines: [
+      '底栏第三根橙色柱子进发现页，第一行就是朋友圈，能发图文动态。',
+      '朋友发的动态下面还能点赞、评论。'
+    ] },
+    { k: 'bottle', n: '漂流瓶', lines: [
+      '发现页里的漂流瓶，捞一个陌生人的问题上来，回一句再扔回去。',
+      '扔出去的瓶子，别人也能捞到。'
+    ] },
+    { k: 'listen', n: '听一听', lines: [
+      '听一听就在发现页，随便点开就有声音，想听就听。',
+      '放后台也行，退出去再进来还接着放。'
+    ] },
+    { k: 'things', n: 'Ta的小事', lines: [
+      'Ta的小事里是朋友们零碎的日常，走过去看一眼就知道谁今天干了啥。',
+      '点一条能看细节，也能跟着留言。'
+    ] },
+    { k: 'diary', n: '我的点滴日常', lines: [
+      '发现页里的「我的点滴日常」是一本电子手账，左右能翻页，像真的书一样。',
+      '里面能用钢笔写字、能导图片；双击文字或图片可以拖动、可以改大小；点空白处就算确认放好。'
+    ] },
+    { k: 'diary2', n: '手账胶带', lines: [
+      '手账底下那卷胶带是删除模式，打开以后点文字或图片就能撕掉。',
+      '底下还有页码和导出按钮，导出会先给你预览，不会被直接弹出去。'
+    ] },
+    { k: 'interact', n: '互动', lines: [
+      '发现页最下面一行是互动，可以和朋友拍一拍、戳一戳。',
+      '聊天里点一下对方头像，也能拍一拍。'
+    ] },
+    { k: 'me', n: '我的资料', lines: [
+      '底栏第四根紫色柱子是「我」，点头像那行能改昵称、换头像。',
+      '改完的名字头像，聊天和通讯录里都会跟着变。'
+    ] },
+    { k: 'status', n: '状态', lines: [
+      '「我」页里能设一个状态，好友点你头像就能看到你现在在干嘛。',
+      '状态自己会过期，不用手动关。'
+    ] },
+    { k: 'fav', n: '收藏', lines: [
+      '「我」页的收藏里放着你收藏过的消息和作品，长按能取消收藏。',
+      '聊天里长按气泡选「收藏」，就会进到这里。'
+    ] },
+    { k: 'emojimgr', n: '表情管理', lines: [
+      '「我」页的表情里能新建表情库、能导入图片、能调顺序。',
+      '「贴贴纸」是系统库，一般表情删得掉，它删不掉。'
+    ] },
+    { k: 'settings', n: '设置', lines: [
+      '「我」页最下面是设置，消息提示、自动回复的延迟都能在这儿改。',
+      '想安静一会儿，也可以把自动回复和提示音先关掉。'
+    ] }
+  ];
+  var guideChipsReady = false;
+  var guideLastMem = null;
+
+  function guideGroup() {
+    var g = groupById(activeGroupId);
+    return (g && g.id === LIKETUAN_ID) ? g : null;
+  }
+
+  function guideRenderChips() {
+    var box = $('#guideChips');
+    if (!box || guideChipsReady) return;
+    var html = '';
+    GUIDE_ITEMS.forEach(function (it) {
+      html += '<button type="button" class="guide-chip" data-k="' + it.k + '">' + esc(it.n) + '</button>';
+    });
+    box.innerHTML = html;
+    box.addEventListener('click', function (e) {
+      var chip = e.target.closest ? e.target.closest('.guide-chip') : null;
+      if (chip) guideAsk(chip.getAttribute('data-k'), chip);
+    });
+    guideChipsReady = true;
+  }
+
+  function guideOpen() {
+    if (!guideGroup()) return;
+    guideRenderChips();
+    var bar = $('#guideMenu');
+    if (bar) bar.classList.remove('hidden');
+  }
+
+  function guideClose() {
+    var bar = $('#guideMenu');
+    if (bar) bar.classList.add('hidden');
+  }
+
+  function guideSync() {
+    if (!guideGroup()) {
+      guideClose();
+      return;
+    }
+    if (!$('#guideChips') || !guideChipsReady) guideRenderChips();
+  }
+
+  function guidePickMember() {
+    var pool = LIKETUAN_MEMBERS.filter(function (m) { return m.id !== guideLastMem; });
+    if (!pool.length) pool = LIKETUAN_MEMBERS;
+    var mem = pool[Math.floor(Math.random() * pool.length)];
+    guideLastMem = mem.id;
+    return mem;
+  }
+
+  function guideBurst(mem, lines) {
+    var i = 0;
+    function step() {
+      if (i >= lines.length) return;
+      setTimeout(function () {
+        sendMsg({ type: 'text', text: lines[i], mine: false, senderId: mem.id });
+        i += 1;
+        setTimeout(step, 1100);
+      }, 700);
+    }
+    step();
+  }
+
+  function guideAsk(key, chip) {
+    var item = null;
+    GUIDE_ITEMS.forEach(function (it) { if (it.k === key) item = it; });
+    if (!item) return;
+    if (chip) chip.classList.add('asked');
+    var mem = guidePickMember();
+    guideBurst(mem, item.lines);
   }
 
   function renderMessages() {
@@ -2681,6 +3070,7 @@
     var g = activeEmojiGroup();
     if (!g) { grid.innerHTML = ''; return; }
     grid.classList.toggle('img-grid', g.items.some(function (it) { return it && typeof it === 'object'; }));
+    grid.classList.toggle('sticker-grid', g.id === STICKER_GROUP_ID);
     if (!g.items.length) {
       grid.innerHTML = '<div class="emoji-empty">这个表情库还是空的<br>点上方「＋ 新建」或「管理」添加</div>';
       return;
@@ -2704,7 +3094,7 @@
       return '<div class="emoji-mgr-row" data-egid="' + g.id + '">' +
         '<div class="emoji-mgr-ico">' + ico + '</div>' +
         '<div class="emoji-mgr-name">' + esc(g.name) + '</div>' +
-        (g.builtin ? '<span class="emoji-mgr-badge">默认</span>' : '') +
+        (g.system ? '<span class="emoji-mgr-badge">系统</span>' : (g.builtin ? '<span class="emoji-mgr-badge">默认</span>' : '')) +
         '<span class="emoji-mgr-count">' + g.items.length + ' 个</span></div>';
     }).join('');
   }
@@ -2716,7 +3106,7 @@
     editingEmojiImages = g ? g.items.filter(function (it) { return it && typeof it === 'object'; }).map(function (it) {
       return { src: it.src, name: it.name };
     }) : [];
-    $('#emojiGroupTitle').textContent = g ? (g.builtin ? '默认表情' : '编辑表情库') : '新建表情库';
+    $('#emojiGroupTitle').textContent = g ? (g.builtin ? g.name : '编辑表情库') : '新建表情库';
     $('#emojiGroupName').value = editingEmojiGroup.name;
     $('#emojiItems').value = g ? g.items.filter(function (it) { return typeof it === 'string'; }).join('\n') : '';
     renderEmojiImgList();
@@ -3673,6 +4063,7 @@
     $('#chatBack').addEventListener('click', function () {
       if (replyTimer) { clearTimeout(replyTimer); replyTimer = null; }
       hideTyping();
+      guideClose();
       closeScreen('pageChatDetail');
       closePanels();
       activeGroupId = null;
@@ -3683,11 +4074,20 @@
     // 点输入框：收起表情 / 加号面板，只留输入框和键盘
     $('#msgInput').addEventListener('focus', closePanels);
     $('#msgInput').addEventListener('click', closePanels);
+    // 粒颗团：点输入框弹出功能指引
+    $('#msgInput').addEventListener('focus', guideOpen);
+    $('#msgInput').addEventListener('click', guideOpen);
+    var _guideFold = $('#guideFold');
+    if (_guideFold) _guideFold.addEventListener('click', function (e) {
+      e.stopPropagation();
+      guideClose();
+    });
     var _compField = document.querySelector('#pageChatDetail .comp-field');
     if (_compField) {
       _compField.addEventListener('click', function (e) {
         if (e.target.closest('#cardDots')) return;
         closePanels();
+        if (!e.target.closest('#guideMenu')) guideOpen();
       });
     }
     $('#msgInput').addEventListener('keydown', function (e) {
