@@ -1067,489 +1067,330 @@
   }
 
   /* ---------------- 我的点滴日常 ---------------- */
-  var DIARY_KEY = 'diary.v1';
-  var DIARY_PHOTO_MAX = 720;
-  var DIARY_STICKERS = [
-    { key: 'star', label: '星星', art: '<path d="M20 4.2l4.6 10 11 1.2-8.3 7.6 2.4 10.8L20 28.4l-9.7 5.4 2.4-10.8L4.4 15.4l11-1.2z" fill="#F7C948" stroke="#DFA72B" stroke-width="1.4" stroke-linejoin="round"/>' },
-    { key: 'heart', label: '爱心', art: '<path d="M20 33.4C10.6 26 4 20.6 4 14.6 4 9.8 7.7 6 12.2 6c3 0 5.7 1.9 7.8 4.7C22.1 7.9 24.8 6 27.8 6 32.3 6 36 9.8 36 14.6c0 6-6.6 11.4-16 18.8z" fill="#F28A8A" stroke="#D96B6B" stroke-width="1.3" stroke-linejoin="round"/>' },
-    { key: 'flower', label: '小花', art: '<g fill="#F7B2C8" stroke="#DE8FAB" stroke-width="1.2"><circle cx="20" cy="10" r="6"/><circle cx="28.6" cy="16.4" r="6"/><circle cx="25.3" cy="26.4" r="6"/><circle cx="14.7" cy="26.4" r="6"/><circle cx="11.4" cy="16.4" r="6"/></g><circle cx="20" cy="20" r="5" fill="#F7D774" stroke="#E0B840" stroke-width="1.1"/>' },
-    { key: 'shell', label: '贝壳', art: '<path d="M20 8C10.4 8 5 16.4 5 26c0 3.2 2.2 5.4 5.4 5.4h19.2c3.2 0 5.4-2.2 5.4-5.4 0-9.6-5.4-18-15-18z" fill="#F3D2C0" stroke="#C99C86" stroke-width="1.3" stroke-linejoin="round"/><g stroke="#C99C86" stroke-width=".9" fill="none"><path d="M20 10.5v20M13.2 12.6l-2 17M26.8 12.6l2 17M8.4 19.4l-1 10.6M31.6 19.4l1 10.6"/></g>' },
-    { key: 'sun', label: '太阳', art: '<circle cx="20" cy="20" r="8" fill="#FFD06A" stroke="#E8A93B" stroke-width="1.2"/><g stroke="#F5B94B" stroke-width="1.8" stroke-linecap="round"><path d="M20 3.6v5M20 31.4v5M3.6 20h5M31.4 20h5M8.4 8.4l3.5 3.5M28.1 28.1l3.5 3.5M31.6 8.4l-3.5 3.5M11.9 28.1L8.4 31.6"/></g>' },
-    { key: 'leaf', label: '叶子', art: '<path d="M31 7.6C18.6 7.6 7.6 15.8 7.6 27c0 3.2 2.2 5.4 5.4 5.4C24 32.4 32 21.4 32 9.4c0-1-.3-1.8-1-1.8z" fill="#9ED3A7" stroke="#6FA97B" stroke-width="1.3" stroke-linejoin="round"/><path d="M11.6 32.2C15.6 24 22 18 30 14.4" stroke="#6FA97B" stroke-width="1.2" fill="none"/>' }
-  ];
-  var diaryIndex = 0;
-  var diarySelectedId = null;
-  var diaryFlipLock = false;
-  var diaryFlipTimer = null;
-  var diaryCrop = null;
-  var DIARY = diarySeed();
+  var HP_KEY = 'diary_notes_v1';
+  var HP_PER_PAGE = 5;
+  var hpNotes = [];
+  var hpMonth = new Date().getMonth() + 1;
+  var hpDay = null;
+  var hpPage = 0;
+  var hpExtra = 0;
+  var hpDeleteMode = false;
+  var hpImageData = null;
+  var hpLoaded = false;
 
-  function diaryBlankEntry() {
-    return { id: uid('d_'), title: '', text: '', items: [], createdAt: Date.now() };
+  function hpEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function normalizeDiaryEntry(e) {
-    if (!e || typeof e !== 'object') return null;
-    if (typeof e.id !== 'string' || !e.id) e.id = uid('d_');
-    if (typeof e.title !== 'string') e.title = '';
-    if (typeof e.text !== 'string') e.text = '';
-    if (!Array.isArray(e.items)) e.items = [];
-    e.items = e.items.filter(function (it) {
-      return it && it.src && (it.type === 'photo' || it.type === 'sticker');
-    }).map(function (it) {
-      return {
-        id: typeof it.id === 'string' && it.id ? it.id : uid('i_'),
-        type: it.type,
-        src: it.src,
-        x: Number(it.x) || 0,
-        y: Number(it.y) || 0,
-        w: Number(it.w) || 72,
-        h: Number(it.h) || 72,
-        rot: Number(it.rot) || 0
-      };
+  function hpParse(ds) {
+    if (!ds) return null;
+    var d = new Date(ds);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function hpFormatDate(ds) {
+    var d = hpParse(ds);
+    return d ? (d.getMonth() + 1) + '/' + d.getDate() : String(ds || '');
+  }
+
+  function hpLoad() {
+    hpNotes = [];
+    try {
+      var raw = localStorage.getItem(HP_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      if (Object.prototype.toString.call(arr) === '[object Array]') hpNotes = arr;
+    } catch (e) { hpNotes = []; }
+    hpNotes = hpNotes.filter(function (n) { return n && n.date; });
+  }
+
+  function hpSave() {
+    try { localStorage.setItem(HP_KEY, JSON.stringify(hpNotes)); } catch (e) {}
+  }
+
+  /* 当前月份（可再按日筛选）的笔记，按日期升序 */
+  function hpMonthNotes() {
+    var out = [];
+    hpNotes.forEach(function (n) {
+      var d = hpParse(n.date);
+      if (d && (d.getMonth() + 1) === hpMonth) out.push(n);
     });
-    if (typeof e.createdAt !== 'number') e.createdAt = Date.now();
-    return e;
+    if (hpDay !== null) {
+      out = out.filter(function (n) {
+        var d = hpParse(n.date);
+        return d && d.getDate() === hpDay;
+      });
+    }
+    out.sort(function (a, b) {
+      var da = hpParse(a.date), db = hpParse(b.date);
+      return (da ? da.getTime() : 0) - (db ? db.getTime() : 0);
+    });
+    return out;
   }
 
-  function diaryReadRaw() {
-    try {
-      var raw = localStorage.getItem(DIARY_KEY);
-      var d = raw ? JSON.parse(raw) : null;
-      if (d && Array.isArray(d.entries)) return d.entries.map(normalizeDiaryEntry).filter(Boolean);
-    } catch (e) {}
-    return null;
+  function hpTotalPages() {
+    return Math.max(1, Math.ceil(hpMonthNotes().length / HP_PER_PAGE)) + hpExtra;
   }
 
-  function diarySeed() {
-    var entries = diaryReadRaw();
-    if (entries && entries.length) return { entries: entries };
-    var d = { entries: [diaryBlankEntry()] };
-    try { localStorage.setItem(DIARY_KEY, JSON.stringify(d)); } catch (e) { toast('本地存储不可用，日记可能无法保存'); }
-    return d;
+  function hpRender() {
+    var mk = $('#monthNum');
+    if (mk) mk.textContent = String(hpMonth).padStart(2, '0');
+
+    var list = $('#notesList');
+    if (!list) return;
+
+    var mn = hpMonthNotes();
+    var notePages = Math.max(1, Math.ceil(mn.length / HP_PER_PAGE));
+    var total = notePages + hpExtra;
+    if (hpPage > total - 1) hpPage = total - 1;
+    if (hpPage < 0) hpPage = 0;
+
+    var pageNotes = hpPage < notePages ? mn.slice(hpPage * HP_PER_PAGE, hpPage * HP_PER_PAGE + HP_PER_PAGE) : [];
+
+    if (!pageNotes.length) {
+      list.innerHTML = mn.length
+        ? '<div class="hp-empty">空白一页</div>'
+        : '<div class="hp-empty">这个月还没有记录</div>';
+    } else {
+      list.innerHTML = pageNotes.map(function (n) {
+        var k = hpNotes.indexOf(n);
+        var img = n.image ? '<div class="hp-note-img"><img src="' + n.image + '" alt=""></div>' : '';
+        return '<div class="hp-note" data-k="' + k + '">' +
+          '<div class="hp-note-date">' + hpEsc(hpFormatDate(n.date)) + '</div>' +
+          '<div class="hp-note-text">' + hpEsc(n.content || '') + '</div>' + img + '</div>';
+      }).join('');
+    }
+
+    var pi = $('#pageIndicator');
+    if (pi) pi.textContent = (hpPage + 1) + ' / ' + total;
   }
 
-  function saveDiary() {
-    try {
-      localStorage.setItem(DIARY_KEY, JSON.stringify(DIARY));
-      return true;
-    } catch (e) {
-      toast('存储空间不足，图片可以裁小一点');
-      return false;
+  /* 月份面板 */
+  function hpRenderMonthPanel() {
+    var panel = $('#monthNavPanel');
+    if (!panel) return;
+    var html = '';
+    for (var m = 1; m <= 12; m++) {
+      html += '<button data-m="' + m + '" class="' + (m === hpMonth ? 'active' : '') + '">' +
+        (m < 10 ? '0' + m : m) + '月</button>';
+    }
+    panel.innerHTML = html;
+    Array.prototype.forEach.call(panel.querySelectorAll('button'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        hpMonth = parseInt(b.getAttribute('data-m'), 10);
+        hpDay = null;
+        hpPage = 0;
+        hpExtra = 0;
+        var dn = $('#dateNum');
+        if (dn) dn.textContent = String(new Date().getDate()).padStart(2, '0');
+        hpRender();
+        panel.classList.remove('active');
+      });
+    });
+  }
+
+  /* 日期面板 */
+  function hpRenderDatePanel() {
+    var panel = $('#dateNavPanel');
+    if (!panel) return;
+    var daysWith = {};
+    hpNotes.forEach(function (n) {
+      var d = hpParse(n.date);
+      if (d && (d.getMonth() + 1) === hpMonth) daysWith[d.getDate()] = true;
+    });
+    var daysInMonth = new Date(new Date().getFullYear(), hpMonth, 0).getDate();
+    var html = '<button data-d="" class="' + (hpDay === null ? 'active' : '') + '">全部日期</button>';
+    for (var d = 1; d <= daysInMonth; d++) {
+      html += '<button data-d="' + d + '" class="' + (d === hpDay ? 'active' : '') + '">' +
+        d + '日 ' + (daysWith[d] ? '·' : '') + '</button>';
+    }
+    panel.innerHTML = html;
+    Array.prototype.forEach.call(panel.querySelectorAll('button'), function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var v = b.getAttribute('data-d');
+        hpDay = v === '' ? null : parseInt(v, 10);
+        hpPage = 0;
+        hpExtra = 0;
+        var dn = $('#dateNum');
+        if (dn) dn.textContent = hpDay === null
+          ? String(new Date().getDate()).padStart(2, '0')
+          : String(hpDay).padStart(2, '0');
+        hpRender();
+        panel.classList.remove('active');
+      });
+    });
+  }
+
+  /* 目录 */
+  function hpRenderToc() {
+    var list = $('#tocList');
+    if (!list) return;
+    var mn = hpMonthNotes();
+    var notePages = Math.max(1, Math.ceil(mn.length / HP_PER_PAGE));
+    var total = hpTotalPages();
+    var html = '';
+    for (var i = 0; i < total; i++) {
+      var label = '空白页';
+      if (i < notePages && mn[i * HP_PER_PAGE]) label = hpFormatDate(mn[i * HP_PER_PAGE].date);
+      html += '<div class="hp-toc-item' + (i === hpPage ? ' active' : '') + '" data-p="' + i + '">' +
+        '<span class="hp-toc-page">第 ' + (i + 1) + ' 页</span>' +
+        '<span class="hp-toc-date">' + hpEsc(label) + '</span></div>';
+    }
+    list.innerHTML = html;
+    Array.prototype.forEach.call(list.querySelectorAll('.hp-toc-item'), function (item) {
+      item.addEventListener('click', function () {
+        hpPage = parseInt(item.getAttribute('data-p'), 10);
+        hpRender();
+        $('#tocPanel').classList.remove('active');
+      });
+    });
+  }
+
+  function hpClosePanels() {
+    var a = $('#tocPanel'); if (a) a.classList.remove('active');
+    var b = $('#monthNavPanel'); if (b) b.classList.remove('active');
+    var c = $('#dateNavPanel'); if (c) c.classList.remove('active');
+  }
+
+  /* 删除模式（胶带） */
+  function hpSetDelete(on) {
+    hpDeleteMode = on;
+    var list = $('#notesList');
+    if (list) list.classList.toggle('hp-deleting', on);
+    var btn = $('#tapeBtn');
+    if (btn) {
+      var closed = btn.querySelector('.hp-tape-closed');
+      var open = btn.querySelector('.hp-tape-open');
+      if (closed) closed.style.display = on ? 'none' : 'block';
+      if (open) open.style.display = on ? 'block' : 'none';
+      btn.classList.toggle('active', on);
     }
   }
 
-  function currentDiaryEntry() {
-    if (!DIARY.entries.length) DIARY.entries.push(diaryBlankEntry());
-    if (diaryIndex < 0) diaryIndex = 0;
-    if (diaryIndex >= DIARY.entries.length) diaryIndex = DIARY.entries.length - 1;
-    return DIARY.entries[diaryIndex];
-  }
-
-  function diaryItemById(id) {
-    if (!id) return null;
-    var e = DIARY.entries[diaryIndex];
-    if (!e) return null;
-    for (var i = 0; i < e.items.length; i++) {
-      if (e.items[i].id === id) return e.items[i];
+  /* 自由文字：拖动 / 缩放 */
+  function hpDraggable(el) {
+    var sx = 0, sy = 0, ox = 0, oy = 0, on = false;
+    el.addEventListener('mousedown', start);
+    el.addEventListener('touchstart', start, { passive: false });
+    function start(e) {
+      if (e.target && e.target.classList.contains('hp-handle')) return;
+      if (el.contentEditable === 'true' && e.target !== el) return;
+      on = true;
+      var p = e.touches ? e.touches[0] : e;
+      sx = p.clientX; sy = p.clientY;
+      ox = el.offsetLeft; oy = el.offsetTop;
+      if (e.preventDefault) e.preventDefault();
     }
-    return null;
+    function move(e) {
+      if (!on) return;
+      var p = e.touches ? e.touches[0] : e;
+      el.style.left = (ox + p.clientX - sx) + 'px';
+      el.style.top = (oy + p.clientY - sy) + 'px';
+    }
+    function end() { on = false; }
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, { passive: false });
+    document.addEventListener('mouseup', end);
+    document.addEventListener('touchend', end);
   }
 
-  function diaryDateLabel(ts) {
-    var d = new Date(Number(ts) || Date.now());
-    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  function hpResizable(el) {
+    var handle = el.querySelector('.hp-handle');
+    if (!handle) return;
+    var sy = 0, base = 16, on = false;
+    function start(e) {
+      if (e.stopPropagation) e.stopPropagation();
+      on = true;
+      var p = e.touches ? e.touches[0] : e;
+      sy = p.clientY;
+      base = parseInt(window.getComputedStyle(el).fontSize, 10) || 16;
+    }
+    handle.addEventListener('mousedown', start);
+    handle.addEventListener('touchstart', start, { passive: false });
+    function move(e) {
+      if (!on) return;
+      var p = e.touches ? e.touches[0] : e;
+      el.style.fontSize = Math.max(12, base + (sy - p.clientY) * 0.5) + 'px';
+    }
+    function end() { on = false; }
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, { passive: false });
+    document.addEventListener('mouseup', end);
+    document.addEventListener('touchend', end);
   }
 
-  function diaryClamp(v, min, max) {
-    if (max < min) return min;
-    return Math.min(Math.max(v, min), max);
+  function hpAddFreeImage(src) {
+    var right = $('#hpRight');
+    if (!right) return;
+    var box = document.createElement('div');
+    box.className = 'hp-freeimg';
+    box.style.left = '50px';
+    box.style.top = '160px';
+    box.innerHTML = '<img src="' + src + '" alt="">';
+    right.appendChild(box);
+    hpDraggable(box);
   }
 
-  function diaryPageSize() {
-    var wrap = $('#diaryLayers');
-    return { w: wrap ? wrap.clientWidth : 260, h: wrap ? wrap.clientHeight : 340 };
+  /* 添加笔记弹窗 */
+  function hpOpenModal() {
+    var mask = $('#modalOverlay');
+    if (!mask) return;
+    var di = $('#dateInput');
+    if (di && !di.value) {
+      var t = new Date();
+      di.value = t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2);
+    }
+    mask.classList.add('active');
+    setTimeout(function () { var c = $('#contentInput'); if (c) c.focus(); }, 260);
   }
 
-  function diaryStickerData(art) {
-    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">' + art + '</svg>');
+  function hpCloseModal() {
+    var mask = $('#modalOverlay');
+    if (mask) mask.classList.remove('active');
+    var c = $('#contentInput'); if (c) c.value = '';
+    hpImageData = null;
+    var pv = $('#imagePreview'); if (pv) pv.style.display = 'none';
+    var pi = $('#previewImg'); if (pi) pi.src = '';
   }
 
   function openDiary() {
-    if (!DIARY.entries.length) DIARY.entries.push(diaryBlankEntry());
-    if (diaryIndex >= DIARY.entries.length) diaryIndex = DIARY.entries.length - 1;
-    if (diaryIndex < 0) diaryIndex = 0;
-    diarySelectedId = null;
-    $('#diaryTray').classList.add('hidden');
-    closeDiaryCrop();
-    closeDiaryToc();
+    try { localStorage.removeItem('diary.v1'); } catch (e) {}
+    if (!hpLoaded) { hpLoad(); hpLoaded = true; }
+    hpDay = null;
+    hpPage = 0;
+    hpExtra = 0;
+    hpMonth = new Date().getMonth() + 1;
+    hpSetDelete(false);
+    hpClosePanels();
+    hpCloseModal();
+    var dn = $('#dateNum');
+    if (dn) dn.textContent = String(new Date().getDate()).padStart(2, '0');
     openScreen('pageDiary');
-    renderDiary(true);
+    hpRender();
   }
 
   function closeDiary() {
-    diaryFlushFields();
-    diarySelectedId = null;
-    $('#diaryTray').classList.add('hidden');
-    closeDiaryCrop();
-    closeDiaryToc();
+    hpSetDelete(false);
+    hpClosePanels();
+    hpCloseModal();
     closeScreen('pageDiary');
   }
 
-  function diaryFlushFields() {
-    var e = DIARY.entries[diaryIndex];
-    if (!e) return;
-    var t = $('#diaryTitleInput');
-    var b = $('#diaryTextInput');
-    var changed = false;
-    if (t && e.title !== t.value) { e.title = t.value; changed = true; }
-    if (b && e.text !== b.value) { e.text = b.value; changed = true; }
-    if (changed) saveDiary();
-  }
-
-  function renderDiary(resetFields) {
-    var e = currentDiaryEntry();
-    if (!e) return;
-    var total = DIARY.entries.length;
-    var no = $('#diaryPageNo');
-    if (no) no.textContent = (diaryIndex + 1) + ' / ' + total;
-    var stamp = $('#diaryStamp');
-    if (stamp) stamp.textContent = diaryDateLabel(e.createdAt) + ' · 第 ' + (diaryIndex + 1) + ' 页';
-    var title = $('#diaryTitleInput');
-    var text = $('#diaryTextInput');
-    if (resetFields) {
-      if (title) title.value = e.title || '';
-      if (text) { text.value = e.text || ''; text.scrollTop = 0; }
-    }
-    renderDiaryItems();
-  }
-
-  function renderDiaryItems() {
-    var wrap = $('#diaryLayers');
-    if (!wrap) return;
-    var e = currentDiaryEntry();
-    var html = '';
-    e.items.forEach(function (it) {
-      html += '<div class="diary-item ' + (it.type === 'sticker' ? 'sticker' : 'photo') +
-        (it.id === diarySelectedId ? ' selected' : '') + '" data-iid="' + it.id + '" data-itype="' + it.type +
-        '" style="left:' + it.x + 'px;top:' + it.y + 'px;width:' + it.w + 'px;height:' + it.h +
-        'px;transform:rotate(' + it.rot + 'deg)"><img src="' + esc(it.src) + '" alt=""></div>';
-    });
-    wrap.innerHTML = html;
-    updateDiaryItemBar();
-  }
-
-  function updateDiaryItemBar() {
-    var bar = $('#diaryItemBar');
-    if (!bar) return;
-    var it = diaryItemById(diarySelectedId);
-    if (!it) {
-      bar.innerHTML = '';
-      bar.dataset.iid = '';
-      bar.classList.add('hidden');
-      return;
-    }
-    var acts = [['bigger', '放大'], ['smaller', '缩小'], ['left', '左转'], ['right', '右转']];
-    if (it.type === 'photo') acts.push(['crop', '裁剪']);
-    acts.push(['del', '删除']);
-    if (bar.dataset.iid !== it.id) {
-      bar.innerHTML = acts.map(function (a) {
-        return '<button data-dact="' + a[0] + '"' + (a[0] === 'del' ? ' class="del"' : '') + '>' + a[1] + '</button>';
-      }).join('');
-      bar.dataset.iid = it.id;
-    }
-    var page = diaryPageSize();
-    var left = diaryClamp(it.x + it.w / 2, 140, Math.max(140, page.w - 140));
-    var top = it.y - 38;
-    if (top < 4) top = diaryClamp(it.y + it.h + 6, 4, page.h - 32);
-    bar.style.left = left + 'px';
-    bar.style.top = top + 'px';
-    bar.classList.remove('hidden');
-  }
-
-  function selectDiaryItem(id) {
-    if (diarySelectedId === id) {
-      updateDiaryItemBar();
-      return;
-    }
-    diarySelectedId = id;
-    $$('#diaryLayers .diary-item').forEach(function (el) {
-      el.classList.toggle('selected', el.getAttribute('data-iid') === id);
-    });
-    updateDiaryItemBar();
-  }
-
-  function addDiaryItem(part) {
-    var e = currentDiaryEntry();
-    var page = diaryPageSize();
-    var it = {
-      id: uid('i_'),
-      type: part.type,
-      src: part.src,
-      x: Math.round((page.w - part.w) / 2),
-      y: Math.round((page.h - part.h) / 2),
-      w: part.w,
-      h: part.h,
-      rot: 0
-    };
-    e.items.push(it);
-    diarySelectedId = it.id;
-    saveDiary();
-    renderDiaryItems();
-  }
-
-  function gotoDiaryPage(i, flip) {
-    if (diaryFlipLock) return;
-    i = Math.max(0, Math.min(DIARY.entries.length - 1, i));
-    diaryFlushFields();
-    diarySelectedId = null;
-    $('#diaryTray').classList.add('hidden');
-    if (!flip || i === diaryIndex) {
-      diaryIndex = i;
-      renderDiary(true);
-      return;
-    }
-    flipDiaryTo(i, i > diaryIndex ? 'next' : 'prev');
-  }
-
-  function flipDiaryTo(i, dir) {
-    var leaf = $('#diaryLeaf');
-    if (!leaf) { diaryIndex = i; renderDiary(true); return; }
-    diaryFlipLock = true;
-    var cls = dir === 'next' ? 'flip-next' : 'flip-prev';
-    leaf.classList.remove('flip-next', 'flip-prev');
-    void leaf.offsetWidth;
-    leaf.classList.add(cls);
-    clearTimeout(diaryFlipTimer);
-    diaryFlipTimer = setTimeout(function () {
-      diaryIndex = i;
-      renderDiary(true);
-    }, 300);
-    setTimeout(function () {
-      leaf.classList.remove('flip-next', 'flip-prev');
-      diaryFlipLock = false;
-    }, 640);
-  }
-
-  function newDiaryPage() {
-    if (diaryFlipLock) return;
-    diaryFlushFields();
-    DIARY.entries.push(diaryBlankEntry());
-    saveDiary();
-    diarySelectedId = null;
-    flipDiaryTo(DIARY.entries.length - 1, 'next');
-  }
-
-  function toggleDiaryTray() {
-    var tray = $('#diaryTray');
-    if (!tray) return;
-    tray.classList.toggle('hidden');
-  }
-
-  function renderDiaryTray() {
-    var tray = $('#diaryTray');
-    if (!tray) return;
-    tray.innerHTML = DIARY_STICKERS.map(function (s) {
-      return '<button class="diary-sticker" data-sticker="' + s.key + '" aria-label="' + s.label + '">' +
-        '<svg viewBox="0 0 40 40" aria-hidden="true">' + s.art + '</svg></button>';
-    }).join('');
-  }
-
-  function diaryPhotoFromFile(file, cb) {
-    var url = URL.createObjectURL(file);
-    var img = new Image();
-    img.onload = function () {
-      var ratio = Math.min(1, DIARY_PHOTO_MAX / Math.max(img.width, img.height));
-      var w = Math.max(1, Math.round(img.width * ratio));
-      var h = Math.max(1, Math.round(img.height * ratio));
-      var canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      var ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      var data = null;
-      try { data = canvas.toDataURL('image/jpeg', 0.75); } catch (e) { data = null; }
-      URL.revokeObjectURL(url);
-      cb(data, w, h);
-    };
-    img.onerror = function () { URL.revokeObjectURL(url); cb(null); };
-    img.src = url;
-  }
-
-  function onDiaryPhotoPick() {
-    var file = this.files && this.files[0];
-    this.value = '';
-    if (!file) return;
-    diaryPhotoFromFile(file, function (data, w, h) {
-      if (!data) { toast('图片处理失败'); return; }
-      var page = diaryPageSize();
-      var dw = Math.min(200, page.w * 0.7, w);
-      var scale = dw / w;
-      addDiaryItem({ type: 'photo', src: data, w: Math.round(dw), h: Math.max(28, Math.round(h * scale)) });
-    });
-  }
-
-  function openDiaryCrop(it) {
-    if (!it) return;
-    var overlay = $('#diaryCrop');
-    overlay.classList.remove('hidden');
-    var frame = $('#diaryCropFrame');
-    var fw = frame.clientWidth || 240;
-    var fh = frame.clientHeight || 240;
-    var imgEl = $('#diaryCropImg');
-    var probe = new Image();
-    probe.onload = function () {
-      var nw = probe.naturalWidth || probe.width;
-      var nh = probe.naturalHeight || probe.height;
-      var base = Math.max(fw / nw, fh / nh);
-      diaryCrop = {
-        item: it, img: probe, fw: fw, fh: fh, base: base, scale: base,
-        tx: (fw - nw * base) / 2, ty: (fh - nh * base) / 2
-      };
-      imgEl.src = it.src;
-      $('#diaryCropZoom').value = 1;
-      diaryCropApply();
-    };
-    probe.onerror = function () { closeDiaryCrop(); toast('图片读取失败'); };
-    probe.src = it.src;
-  }
-
-  function diaryCropApply() {
-    if (!diaryCrop) return;
-    var c = diaryCrop;
-    var imgEl = $('#diaryCropImg');
-    imgEl.style.width = (c.img.naturalWidth * c.scale) + 'px';
-    imgEl.style.height = (c.img.naturalHeight * c.scale) + 'px';
-    imgEl.style.left = c.tx + 'px';
-    imgEl.style.top = c.ty + 'px';
-  }
-
-  function diaryCropClamp() {
-    var c = diaryCrop;
-    var iw = c.img.naturalWidth * c.scale;
-    var ih = c.img.naturalHeight * c.scale;
-    c.tx = Math.min(0, Math.max(c.fw - iw, c.tx));
-    c.ty = Math.min(0, Math.max(c.fh - ih, c.ty));
-  }
-
-  function diaryCropZoomTo(v) {
-    var c = diaryCrop;
-    if (!c) return;
-    var cx = c.fw / 2, cy = c.fh / 2;
-    var ux = (cx - c.tx) / c.scale;
-    var uy = (cy - c.ty) / c.scale;
-    c.scale = c.base * (Number(v) || 1);
-    c.tx = cx - ux * c.scale;
-    c.ty = cy - uy * c.scale;
-    diaryCropClamp();
-    diaryCropApply();
-  }
-
-  function closeDiaryCrop() {
-    var el = $('#diaryCrop');
-    if (el) {
-      el.classList.add('hidden');
-      el.setAttribute('aria-hidden', 'true');
-    }
-    diaryCrop = null;
-  }
-
-  function confirmDiaryCrop() {
-    var c = diaryCrop;
-    if (!c) return;
-    var out = 300;
-    var canvas = document.createElement('canvas');
-    canvas.width = canvas.height = out;
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, out, out);
-    var sw = c.fw / c.scale;
-    ctx.drawImage(c.img, -c.tx / c.scale, -c.ty / c.scale, sw, sw, 0, 0, out, out);
-    var data = null;
-    try { data = canvas.toDataURL('image/jpeg', 0.85); } catch (e) { data = null; }
-    if (!data) { toast('裁剪失败'); return; }
-    var it = c.item;
-    it.src = data;
-    it.h = it.w;
-    closeDiaryCrop();
-    saveDiary();
-    diarySelectedId = it.id;
-    renderDiaryItems();
-    toast('已经裁成方块啦');
-  }
-
-  function openDiaryToc() {
-    var sheet = $('#diaryTocSheet');
-    var s = $('#diaryTocSearch');
-    if (s) s.value = '';
-    renderDiaryToc('');
-    sheet.classList.remove('hidden');
-    sheet.setAttribute('aria-hidden', 'false');
-    void sheet.offsetWidth;
-    sheet.classList.add('open');
-    setTimeout(function () { try { s.focus(); } catch (e) {} }, 220);
-  }
-
-  function closeDiaryToc() {
-    var el = $('#diaryTocSheet');
-    if (!el) return;
-    el.classList.remove('open');
-    el.setAttribute('aria-hidden', 'true');
-    setTimeout(function () {
-      if (!el.classList.contains('open')) el.classList.add('hidden');
-    }, 320);
-  }
-
-  function renderDiaryToc(q) {
-    var list = $('#diaryTocList');
-    if (!list) return;
-    var kw = (q || '').trim().toLowerCase();
-    var visible = [];
-    DIARY.entries.forEach(function (e, i) {
-      if (kw) {
-        var hay = ((e.title || '') + ' ' + (e.text || '')).toLowerCase();
-        if (hay.indexOf(kw) < 0) return;
-      }
-      visible.push({ e: e, i: i });
-    });
-    if (!visible.length) {
-      list.innerHTML = '<div class="diary-toc-empty">' + (kw ? '没有找到这一页' : '还没有记录，写点什么吧') + '</div>';
-      return;
-    }
-    list.innerHTML = visible.map(function (o) {
-      var name = (o.e.title || '').trim() || (o.e.text || '').trim().slice(0, 18) || '空白一页';
-      return '<button class="diary-toc-item' + (o.i === diaryIndex ? ' active' : '') + '" data-di="' + o.i + '">' +
-        '<span class="diary-toc-name">' + esc(name) + '</span>' +
-        '<em class="diary-toc-date">' + esc(diaryDateLabel(o.e.createdAt)) + '</em></button>';
-    }).join('');
-  }
-
-  // 聊天里偶尔冒出来一句「我想聊聊这个」，打开的是某一天的小事
+  /* 聊天里偶尔冒出来一句「我想聊聊这个」，打开的是某一页的一点小事 */
   function maybeDiaryTopic(g, f) {
     if (!g || g.id === LIKETUAN_ID || g.system === true) return null;
     if (Math.random() >= 0.06) return null;
-    var entries = diaryReadRaw();
-    if (!entries || !entries.length) return null;
-    var pool = entries.filter(function (e) {
-      return (e.text || '').trim() || (e.items && e.items.length);
-    });
+    if (!hpLoaded) { hpLoad(); hpLoaded = true; }
+    var pool = hpNotes.filter(function (n) { return (n.content || '').trim(); });
     if (!pool.length) return null;
-    var e = pool[Math.floor(Math.random() * pool.length)];
-    var d = {
-      title: (e.title || '').trim(),
-      text: (e.text || '').trim()
-    };
-    for (var i = 0; i < e.items.length; i++) {
-      if (e.items[i].type === 'photo' && e.items[i].src) { d.thumb = e.items[i].src; break; }
-    }
+    var n = pool[Math.floor(Math.random() * pool.length)];
     return {
       id: uid('m_'),
       type: 'diary',
       text: '我想聊聊这个',
-      diary: d,
+      diary: { title: '', text: (n.content || '').trim(), thumb: n.image || null },
       ts: Date.now(),
       mine: false,
       senderId: f ? f.id : null
@@ -1557,221 +1398,230 @@
   }
 
   function bindDiaryEvents() {
-    renderDiaryTray();
-    $('#diaryBack').addEventListener('click', closeDiary);
-    $('#diaryDock').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-dtool]');
-      if (!btn) return;
-      var act = btn.getAttribute('data-dtool');
-      if (act === 'text') {
-        var t = $('#diaryTextInput');
-        if (t) t.focus();
-      } else if (act === 'photo') {
-        $('#diaryPhotoFile').click();
-      } else if (act === 'sticker') {
-        toggleDiaryTray();
-      } else if (act === 'newpage') {
-        newDiaryPage();
-      }
-    });
-    $('#diaryDockFold').addEventListener('click', function () {
-      var dock = $('#diaryDock');
-      dock.classList.toggle('folded');
-      var folded = dock.classList.contains('folded');
-      this.textContent = folded ? '«' : '»';
-      this.setAttribute('aria-label', folded ? '展开' : '收纳');
-    });
-    $('#diaryPhotoFile').addEventListener('change', onDiaryPhotoPick);
-    $('#diaryTray').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-sticker]');
-      if (!btn) return;
-      var key = btn.getAttribute('data-sticker');
-      var s = DIARY_STICKERS.filter(function (x) { return x.key === key; })[0];
-      if (!s) return;
-      addDiaryItem({ type: 'sticker', src: diaryStickerData(s.art), w: 60, h: 60 });
-      $('#diaryTray').classList.add('hidden');
-    });
-    $('#diaryTitleInput').addEventListener('input', function () {
-      var e = DIARY.entries[diaryIndex];
-      if (!e) return;
-      e.title = this.value;
-      saveDiary();
-    });
-    $('#diaryTextInput').addEventListener('blur', function () {
-      var e = DIARY.entries[diaryIndex];
-      if (!e) return;
-      if (e.text !== this.value) { e.text = this.value; saveDiary(); }
-    });
-    $('#diaryToc').addEventListener('click', openDiaryToc);
-    $('#diaryTocClose').addEventListener('click', closeDiaryToc);
-    $('#diaryTocSheet').addEventListener('click', function (e) {
-      if (e.target === this) closeDiaryToc();
-    });
-    // 目录左侧抽屉可拖动宽度（1/3 ~ 2/3）
-    $('#diaryTocGrip').addEventListener('pointerdown', function (e) {
-      e.preventDefault();
-      var panel = $('#diaryTocPanel');
-      var sheet = $('#diaryTocSheet');
-      if (!panel || !sheet) return;
-      var pageW = sheet.clientWidth;
-      var startX = e.clientX;
-      var startW = panel.offsetWidth;
-      var min = Math.max(126, Math.round(pageW / 3));
-      var max = Math.round(pageW * 2 / 3);
-      function onMove(ev) {
-        var w = startW + (ev.clientX - startX);
-        w = Math.max(min, Math.min(max, w));
-        panel.style.width = w + 'px';
-      }
-      function onUp() {
-        document.removeEventListener('pointermove', onMove);
-        document.removeEventListener('pointerup', onUp);
-      }
-      document.addEventListener('pointermove', onMove);
-      document.addEventListener('pointerup', onUp);
-    });
-    // 左右滑动翻页
-    (function bindDiarySwipe() {
-      var book = $('#diaryBook');
-      if (!book) return;
-      var sx = 0, sy = 0, active = false;
-      book.addEventListener('pointerdown', function (e) {
-        if (e.target.closest('.diary-item') || e.target.closest('input') || e.target.closest('textarea')) return;
-        active = true;
-        sx = e.clientX;
-        sy = e.clientY;
-      });
-      book.addEventListener('pointerup', function (e) {
-        if (!active) return;
-        active = false;
-        var dx = e.clientX - sx;
-        var dy = e.clientY - sy;
-        if (Math.abs(dx) < 46 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
-        if (dx < 0) gotoDiaryPage(diaryIndex + 1, true);
-        else gotoDiaryPage(diaryIndex - 1, true);
-      });
-      book.addEventListener('pointercancel', function () { active = false; });
-    }());
-    $('#diaryTocSearch').addEventListener('input', function () { renderDiaryToc(this.value); });
-    $('#diaryTocList').addEventListener('click', function (e) {
-      var item = e.target.closest('.diary-toc-item');
-      if (!item) return;
-      var i = parseInt(item.getAttribute('data-di'), 10);
-      closeDiaryToc();
-      gotoDiaryPage(i, true);
-    });
-    $('#diaryCropCancel').addEventListener('click', closeDiaryCrop);
-    $('#diaryCropOk').addEventListener('click', confirmDiaryCrop);
-    $('#diaryCropZoom').addEventListener('input', function () { diaryCropZoomTo(this.value); });
+    hpLoad();
 
-    // 选中物件后的小控制条
-    $('#diaryItemBar').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-dact]');
-      if (!btn) return;
-      var it = diaryItemById(diarySelectedId);
-      if (!it) return;
-      var act = btn.getAttribute('data-dact');
-      var page = diaryPageSize();
-      if (act === 'bigger' || act === 'smaller') {
-        var k = act === 'bigger' ? 1.15 : 1 / 1.15;
-        var nw = Math.round(it.w * k);
-        var nh = Math.round(it.h * k);
-        if (nw < 24 || nh < 24 || nw > page.w * 1.4) return;
-        it.x = Math.round(it.x - (nw - it.w) / 2);
-        it.y = Math.round(it.y - (nh - it.h) / 2);
-        it.w = nw;
-        it.h = nh;
-      } else if (act === 'left') {
-        it.rot = (it.rot - 15) % 360;
-      } else if (act === 'right') {
-        it.rot = (it.rot + 15) % 360;
-      } else if (act === 'crop') {
-        openDiaryCrop(it);
-        return;
-      } else if (act === 'del') {
-        var e2 = DIARY.entries[diaryIndex];
-        if (!e2) return;
-        e2.items = e2.items.filter(function (x) { return x.id !== it.id; });
-        diarySelectedId = null;
-        saveDiary();
-        renderDiaryItems();
+    var exit = $('#diaryExit');
+    if (exit) exit.addEventListener('click', closeDiary);
+
+    var ribbon = $('#ribbonBtn');
+    if (ribbon) ribbon.addEventListener('click', function (e) {
+      e.stopPropagation();
+      hpRenderToc();
+      var p = $('#tocPanel');
+      if (p) p.classList.toggle('active');
+    });
+
+    var monthSel = $('#monthSelector');
+    if (monthSel) monthSel.addEventListener('click', function (e) {
+      e.stopPropagation();
+      hpRenderMonthPanel();
+      var p = $('#monthNavPanel');
+      if (p) p.classList.toggle('active');
+      var d = $('#dateNavPanel'); if (d) d.classList.remove('active');
+    });
+
+    var dateSel = $('#dateSelector');
+    if (dateSel) dateSel.addEventListener('click', function (e) {
+      e.stopPropagation();
+      hpRenderDatePanel();
+      var p = $('#dateNavPanel');
+      if (p) p.classList.toggle('active');
+      var m = $('#monthNavPanel'); if (m) m.classList.remove('active');
+    });
+
+    document.addEventListener('click', function (e) {
+      var toc = $('#tocPanel');
+      if (toc && toc.classList.contains('active') && !toc.contains(e.target) && e.target !== ribbon) {
+        toc.classList.remove('active');
+      }
+      var mp = $('#monthNavPanel');
+      if (mp && mp.classList.contains('active') && !mp.contains(e.target) && e.target !== monthSel && !(monthSel && monthSel.contains(e.target))) {
+        mp.classList.remove('active');
+      }
+      var dp = $('#dateNavPanel');
+      if (dp && dp.classList.contains('active') && !dp.contains(e.target) && !(dateSel && dateSel.contains(e.target))) {
+        dp.classList.remove('active');
+      }
+    });
+
+    /* 翻页 */
+    var prev = $('#prevPageBtn');
+    if (prev) prev.addEventListener('click', function () {
+      hpSetDelete(false);
+      if (hpPage > 0) { hpPage--; hpRender(); }
+    });
+    var next = $('#nextPageBtn');
+    if (next) next.addEventListener('click', function () {
+      hpSetDelete(false);
+      if (hpPage < hpTotalPages() - 1) { hpPage++; hpRender(); }
+    });
+
+    /* 加一页 */
+    var addPage = $('#addPageBtn');
+    if (addPage) addPage.addEventListener('click', function () {
+      hpSetDelete(false);
+      hpExtra++;
+      hpPage = hpTotalPages() - 1;
+      hpRender();
+    });
+
+    /* 胶带：删除模式 */
+    var tape = $('#tapeBtn');
+    if (tape) tape.addEventListener('click', function (e) {
+      e.stopPropagation();
+      hpSetDelete(!hpDeleteMode);
+    });
+
+    var right = $('#hpRight');
+    if (right) right.addEventListener('click', function (e) {
+      if (!hpDeleteMode) return;
+
+      var note = e.target.closest ? e.target.closest('.hp-note') : null;
+      if (note) {
+        var k = parseInt(note.getAttribute('data-k'), 10);
+        if (!isNaN(k) && k > -1 && k < hpNotes.length) {
+          hpNotes.splice(k, 1);
+          hpSave();
+          hpRender();
+        }
         return;
       }
-      saveDiary();
-      renderDiaryItems();
+      var free = e.target.closest ? e.target.closest('.hp-free') : null;
+      if (free) { free.remove(); return; }
+      var fimg = e.target.closest ? e.target.closest('.hp-freeimg') : null;
+      if (fimg) fimg.remove();
     });
 
-    // 点空白处取消选中
-    $('#pageDiary').addEventListener('pointerdown', function (e) {
-      if (!diarySelectedId) return;
-      if (e.target.closest('.diary-item') || e.target.closest('#diaryItemBar')) return;
-      diarySelectedId = null;
-      renderDiaryItems();
-    }, true);
-
-    // 拖动图片 / 贴纸
-    $('#diaryLayers').addEventListener('pointerdown', function (e) {
-      var el = e.target.closest('.diary-item');
-      if (!el) return;
-      var it = diaryItemById(el.getAttribute('data-iid'));
-      if (!it) return;
-      e.preventDefault();
-      selectDiaryItem(it.id);
-      var host = $('#pageDiary');
-      var sc = host.offsetWidth ? host.getBoundingClientRect().width / host.offsetWidth : 1;
-      if (!sc || sc <= 0) sc = 1;
-      var sx = e.clientX, sy = e.clientY;
-      var ox = it.x, oy = it.y;
-      var page = diaryPageSize();
-      var moved = false;
-      el.classList.add('dragging');
-      function move(ev) {
-        var dx = (ev.clientX - sx) / sc;
-        var dy = (ev.clientY - sy) / sc;
-        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
-        it.x = Math.round(diaryClamp(ox + dx, 24 - it.w, page.w - 24));
-        it.y = Math.round(diaryClamp(oy + dy, 24 - it.h, page.h - 24));
-        el.style.left = it.x + 'px';
-        el.style.top = it.y + 'px';
-        updateDiaryItemBar();
-      }
-      function up() {
-        document.removeEventListener('pointermove', move);
-        document.removeEventListener('pointerup', up);
-        document.removeEventListener('pointercancel', up);
-        el.classList.remove('dragging');
-        if (moved) saveDiary();
-        updateDiaryItemBar();
-      }
-      document.addEventListener('pointermove', move);
-      document.addEventListener('pointerup', up);
-      document.addEventListener('pointercancel', up);
+    /* 导入图片 */
+    var fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', function () {
+      var f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function (ev) { hpAddFreeImage(ev.target.result); };
+      reader.readAsDataURL(f);
+      fileInput.value = '';
+    });
+    var imp = $('#importImageBtn');
+    if (imp) imp.addEventListener('click', function () {
+      hpSetDelete(false);
+      fileInput.click();
     });
 
-    // 裁剪框里拖动图片
-    $('#diaryCropFrame').addEventListener('pointerdown', function (e) {
-      if (!diaryCrop) return;
-      e.preventDefault();
-      var host = $('#pageDiary');
-      var sc = host.offsetWidth ? host.getBoundingClientRect().width / host.offsetWidth : 1;
-      if (!sc || sc <= 0) sc = 1;
-      var sx = e.clientX, sy = e.clientY, ox = diaryCrop.tx, oy = diaryCrop.ty;
-      var frame = this;
-      frame.classList.add('dragging');
-      function move(ev) {
-        diaryCrop.tx = ox + (ev.clientX - sx) / sc;
-        diaryCrop.ty = oy + (ev.clientY - sy) / sc;
-        diaryCropClamp();
-        diaryCropApply();
-      }
-      function up() {
-        document.removeEventListener('pointermove', move);
-        document.removeEventListener('pointerup', up);
-        frame.classList.remove('dragging');
-      }
-      document.addEventListener('pointermove', move);
-      document.addEventListener('pointerup', up);
+    /* 写字 */
+    var pen = $('#penBtn');
+    if (pen) pen.addEventListener('click', function () {
+      hpSetDelete(false);
+      if (!right) return;
+      var el = document.createElement('div');
+      el.className = 'hp-free selected';
+      el.contentEditable = 'true';
+      el.style.left = '36px';
+      el.style.top = '140px';
+      el.innerHTML = '写点什么...<div class="hp-handle"></div>';
+      right.appendChild(el);
+      el.focus();
+      try {
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        if (range.startContainer.firstChild) range.selectNode(range.startContainer.firstChild);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } catch (err) {}
+      hpDraggable(el);
+      hpResizable(el);
+      setTimeout(function () {
+        document.addEventListener('click', function onDoc(ev) {
+          if (!el.contains(ev.target)) {
+            el.classList.remove('selected');
+            document.removeEventListener('click', onDoc);
+          }
+        });
+      }, 10);
     });
+
+    /* 导出图片 */
+    var exp = $('#exportBtn');
+    if (exp) exp.addEventListener('click', function () {
+      hpSetDelete(false);
+      hpClosePanels();
+      if (typeof html2canvas !== 'function') return;
+      html2canvas(right, { scale: 2, useCORS: true, backgroundColor: '#faf8f3', logging: false })
+        .then(function (canvas) {
+          var title = ($('#notebookTitle') && $('#notebookTitle').textContent.trim()) || '我的手账';
+          var a = document.createElement('a');
+          a.download = title + '_第' + (hpPage + 1) + '页.png';
+          a.href = canvas.toDataURL('image/png');
+          a.click();
+        })['catch'](function () {});
+    });
+
+    /* 添加笔记 */
+    var addBtn = $('#diaryAddBtn');
+    if (addBtn) addBtn.addEventListener('click', hpOpenModal);
+
+    var cancel = $('#cancelBtn');
+    if (cancel) cancel.addEventListener('click', hpCloseModal);
+
+    var mask = $('#modalOverlay');
+    if (mask) mask.addEventListener('click', function (e) {
+      if (e.target === mask) hpCloseModal();
+    });
+
+    var imgInp = $('#imageInput');
+    if (imgInp) imgInp.addEventListener('change', function () {
+      var f = imgInp.files && imgInp.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        hpImageData = ev.target.result;
+        var pv = $('#previewImg'); if (pv) pv.src = hpImageData;
+        var wrap = $('#imagePreview'); if (wrap) wrap.style.display = 'block';
+      };
+      reader.readAsDataURL(f);
+    });
+
+    var submit = $('#submitBtn');
+    if (submit) submit.addEventListener('click', function () {
+      var ci = $('#contentInput');
+      var di = $('#dateInput');
+      var content = ci ? ci.value.trim() : '';
+      var date = di ? di.value : '';
+      if (!content) { if (ci) ci.focus(); return; }
+      if (!date) { if (di) di.focus(); return; }
+
+      var note = { date: hpFormatDate(date), content: content, image: hpImageData };
+      hpNotes.push(note);
+      hpSave();
+
+      var d = hpParse(date);
+      if (d) {
+        hpMonth = d.getMonth() + 1;
+        var dn = $('#dateNum');
+        if (dn) dn.textContent = String(d.getDate()).padStart(2, '0');
+      }
+      hpDay = null;
+      hpExtra = 0;
+
+      var mn = hpMonthNotes();
+      var pos = mn.indexOf(note);
+      hpPage = pos > -1 ? Math.floor(pos / HP_PER_PAGE) : 0;
+
+      hpRender();
+      hpCloseModal();
+
+      setTimeout(function () {
+        var items = $('#notesList') ? $('#notesList').querySelectorAll('.hp-note') : [];
+        if (items.length) items[items.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    });
+
+    hpRender();
   }
 
   /* ================= 标题栏小团子 ================= */

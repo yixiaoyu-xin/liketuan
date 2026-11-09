@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EDEDED">
 <title>聊天</title>
-<link rel="stylesheet" href="css/style.css?v=20261108c">
+<link rel="stylesheet" href="css/style.css?v=20261109e">
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link href="https://miaoda.feishu.cn/fonts/css2?family=Patrick+Hand|Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://fastly.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="phone" id="phone">
@@ -818,66 +821,142 @@
 
     <!-- 我的点滴日常 -->
     <div class="screen-page diary-page" id="pageDiary" aria-hidden="true">
-      <div class="diary-head">
-        <button class="diary-back" id="diaryBack" aria-label="返回">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5 8 12l7.5 7.5"/></svg>
-        </button>
-        <div class="diary-head-title">我的点滴日常</div>
-        <button class="diary-toc" id="diaryToc">目录</button>
-      </div>
+      <div class="hp-desk" id="hpDesk">
 
-      <div class="diary-stage">
-        <div class="diary-book" id="diaryBook">
-          <div class="diary-leaf" id="diaryLeaf">
-            <div class="diary-leaf-inner">
-              <div class="diary-stamp" id="diaryStamp">第 1 页</div>
-              <input class="diary-title-input" id="diaryTitleInput" type="text" maxlength="60" placeholder="今天的小事" autocomplete="off">
-              <textarea class="diary-text" id="diaryTextInput" placeholder="随手记下一点什么…"></textarea>
-              <div class="diary-layers" id="diaryLayers"></div>
-              <div class="diary-item-bar hidden" id="diaryItemBar"></div>
+        <div class="hp-book" id="hpBook">
+          <div class="hp-cover"></div>
+          <div class="hp-tab hp-tab-1"></div>
+          <div class="hp-tab hp-tab-2"></div>
+          <div class="hp-tab hp-tab-3"></div>
+          <div class="hp-tab hp-tab-4"></div>
+          <div class="hp-ribbon" id="ribbonBtn" title="目录"></div>
+          <div class="hp-pages-edge"></div>
+
+          <button class="hp-side hp-side-left hp-side-prev" id="prevPageBtn" title="上一页" aria-label="上一页">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="10" width="80" height="80" rx="20" fill="#faf8f3"/>
+              <path d="M58 35 L42 50 L58 65" stroke="#b09e7c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <button class="hp-side hp-side-right hp-side-page" id="addPageBtn" title="放入书页" aria-label="放入书页">
+            <img src="img/diary-btn-page.png" alt="">
+          </button>
+          <button class="hp-side hp-side-right hp-side-image" id="importImageBtn" title="导入图片" aria-label="导入图片">
+            <img src="img/diary-btn-image.png" alt="">
+          </button>
+
+          <button class="hp-side hp-side-right hp-side-next" id="nextPageBtn" title="下一页" aria-label="下一页">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="10" width="80" height="80" rx="20" fill="#faf8f3"/>
+              <path d="M42 35 L58 50 L42 65" stroke="#b09e7c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <button class="hp-side hp-side-right hp-side-export" id="exportBtn" title="导出图片" aria-label="导出图片">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="10" width="80" height="80" rx="20" fill="#faf8f3"/>
+              <path d="M50 30 L50 58" stroke="#b09e7c" stroke-width="5" stroke-linecap="round"/>
+              <path d="M36 48 L50 62 L64 48" stroke="#b09e7c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M30 70 L70 70" stroke="#b09e7c" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <div class="hp-pages">
+            <div class="hp-left"></div>
+            <div class="hp-spine"></div>
+
+            <div class="hp-right" id="hpRight">
+
+              <div class="hp-toc" id="tocPanel">
+                <div class="hp-toc-title" id="tocTitle">目录</div>
+                <div id="tocList"></div>
+              </div>
+
+              <div class="hp-head">
+                <div class="hp-head-left">
+                  <h1 class="hp-title" id="notebookTitle" contenteditable="true" spellcheck="false">我的点滴日常</h1>
+                </div>
+                <div class="hp-head-right">
+                  <div class="hp-month" id="monthSelector">
+                    <span class="hp-month-label">month</span>
+                    <span class="hp-slash">/</span>
+                    <span class="hp-month-num" id="monthNum">05</span>
+                    <div class="hp-month-panel" id="monthNavPanel"></div>
+                  </div>
+                  <div class="hp-date" id="dateSelector">
+                    <span class="hp-date-label">Date</span>
+                    <span class="hp-slash">/</span>
+                    <span class="hp-date-num" id="dateNum">09</span>
+                    <div class="hp-date-panel" id="dateNavPanel"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hp-notes" id="notesList"></div>
+
+              <div class="hp-footer">
+                <button class="hp-tape" id="tapeBtn" title="删除模式" aria-label="删除模式">
+                  <svg class="hp-tape-closed" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="12" y="20" width="40" height="24" rx="12" stroke="#b09e7c" stroke-width="2.5" fill="#e8dcc4"/>
+                    <circle cx="24" cy="32" r="6" stroke="#b09e7c" stroke-width="2" fill="#f5efe0"/>
+                    <line x1="12" y1="28" x2="52" y2="28" stroke="#d4c5a9" stroke-width="1" stroke-dasharray="2,2"/>
+                  </svg>
+                  <svg class="hp-tape-open" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+                    <rect x="12" y="20" width="40" height="24" rx="12" stroke="#b09e7c" stroke-width="2.5" fill="#e8dcc4"/>
+                    <circle cx="24" cy="32" r="6" stroke="#b09e7c" stroke-width="2" fill="#f5efe0"/>
+                    <path d="M52 28 L58 36 L52 40" stroke="#b09e7c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="12" y1="28" x2="52" y2="28" stroke="#d4c5a9" stroke-width="1" stroke-dasharray="2,2"/>
+                  </svg>
+                </button>
+                <span class="hp-page-no" id="pageIndicator">1 / 1</span>
+                <button class="hp-pen" id="penBtn" title="写字" aria-label="写字">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M44 8 L56 20 L24 52 L12 56 L16 44 Z" stroke="#5c4429" stroke-width="2.5" stroke-linejoin="round" fill="none"/>
+                    <path d="M40 12 L52 24" stroke="#5c4429" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 56 L14 50" stroke="#5c4429" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
       </div>
 
-      <div class="diary-dock folded" id="diaryDock">
-        <div class="diary-dock-bar">
-          <button class="diary-tool" data-dtool="text">文字</button>
-          <button class="diary-tool" data-dtool="photo">图片</button>
-          <button class="diary-tool" data-dtool="sticker">贴纸</button>
-          <button class="diary-tool" data-dtool="newpage" id="diaryNewPage">新的一页</button>
-        </div>
-        <button class="diary-dock-fold" id="diaryDockFold" aria-label="展开">«</button>
-      </div>
-      <div class="diary-tray hidden" id="diaryTray"></div>
+      <button class="hp-back" id="diaryExit" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5 8 12l7.5 7.5"/></svg>
+      </button>
 
-      <div class="diary-pageno" id="diaryPageNo">1 / 1</div>
-
-      <input type="file" id="diaryPhotoFile" accept="image/*" class="hidden">
-
-      <div class="diary-toc-sheet hidden" id="diaryTocSheet" aria-hidden="true">
-        <div class="diary-toc-panel" id="diaryTocPanel">
-          <div class="diary-toc-head">
-            <div class="diary-toc-title">目录</div>
-            <button class="diary-toc-close" id="diaryTocClose" aria-label="关闭">×</button>
+      <div class="hp-mask" id="modalOverlay">
+        <div class="hp-modal">
+          <div class="hp-modal-title">写点什么...</div>
+          <div class="hp-field">
+            <label class="hp-label">日期</label>
+            <input type="date" class="hp-input" id="dateInput">
           </div>
-          <input class="diary-toc-search" id="diaryTocSearch" type="search" placeholder="搜索标题或内容">
-          <div class="diary-toc-list" id="diaryTocList"></div>
-          <div class="diary-toc-grip" id="diaryTocGrip" aria-hidden="true"></div>
-        </div>
-      </div>
-
-      <div class="diary-crop hidden" id="diaryCrop" aria-hidden="true">
-        <div class="diary-crop-panel">
-          <div class="diary-crop-title">裁剪</div>
-          <div class="diary-crop-frame" id="diaryCropFrame">
-            <img class="diary-crop-img" id="diaryCropImg" alt="">
-            <div class="diary-crop-grid"></div>
+          <div class="hp-field">
+            <label class="hp-label">内容</label>
+            <textarea class="hp-input hp-textarea" id="contentInput" placeholder="今天发生了什么有趣的事呢？"></textarea>
           </div>
-          <input class="diary-crop-range" id="diaryCropZoom" type="range" min="1" max="3" step="0.01" value="1">
-          <div class="diary-crop-actions">
-            <button class="diary-crop-btn muted" id="diaryCropCancel">取消</button>
-            <button class="diary-crop-btn" id="diaryCropOk">完成</button>
+          <div class="hp-field">
+            <label class="hp-label">配图（可选）</label>
+            <label class="hp-upload">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+              选择图片
+              <input type="file" id="imageInput" accept="image/*" hidden>
+            </label>
+            <div class="hp-preview" id="imagePreview">
+              <img id="previewImg" src="" alt="预览">
+            </div>
+          </div>
+          <div class="hp-modal-actions">
+            <button class="hp-btn hp-btn-cancel" id="cancelBtn">取消</button>
+            <button class="hp-btn hp-btn-submit" id="submitBtn">保存</button>
           </div>
         </div>
       </div>
@@ -1227,6 +1306,6 @@
 
   </div>
 </div>
-<script src="js/app.js?v=20261108c"></script>
+<script src="js/app.js?v=20261109c"></script>
 </body>
 </html>
